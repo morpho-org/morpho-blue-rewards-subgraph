@@ -1,7 +1,6 @@
-import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
+import { Address, BigInt, log } from "@graphprotocol/graph-ts";
 
 import {
-  MorphoBlue,
   AccrueInterest,
   Borrow,
   CreateMarket,

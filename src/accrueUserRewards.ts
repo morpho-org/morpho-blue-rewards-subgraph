@@ -1,4 +1,4 @@
-import { Address, BigInt, Bytes, ethereum, log } from "@graphprotocol/graph-ts";
+import { Address, BigInt, ethereum, log } from "@graphprotocol/graph-ts";
 
 import { Balance, Epoch, Market, MarketEpoch, MarketEpochUser, User } from "../generated/schema";
 
