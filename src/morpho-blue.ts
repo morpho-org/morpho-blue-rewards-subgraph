@@ -1,4 +1,4 @@
-import { BigInt } from "@graphprotocol/graph-ts"
+import {Address, BigInt, Bytes, log} from "@graphprotocol/graph-ts"
 import {
   MorphoBlue,
   AccrueInterest,
@@ -19,68 +19,56 @@ import {
   Withdraw,
   WithdrawCollateral
 } from "../generated/MorphoBlue/MorphoBlue"
-import { ExampleEntity } from "../generated/schema"
+import {_FeeRecipient, CurrentEpoch, Epoch, Market, MarketEpoch} from "../generated/schema";
+import {syncEpochs} from "./syncEpochs";
+import {accrueMarketRewards} from "./accrueMarketRewards";
+import {accrueUserRewards} from "./accrueUserRewards";
+const whitelistedMarkets = new Map<Bytes, boolean>()
+whitelistedMarkets.set(Bytes.fromHexString("0x"), true);
+
+function isRewardedMarket(marketId: Bytes): boolean {
+  return !!whitelistedMarkets.has(marketId) && whitelistedMarkets.get(marketId);
+}
 
 export function handleAccrueInterest(event: AccrueInterest): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from)
 
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (!entity) {
-    entity = new ExampleEntity(event.transaction.from)
-
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
+  const currentEpoch = syncEpochs(event.block);
+  if(!isRewardedMarket(event.params.id)) {
+    return;
   }
-
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
-
-  // Entity fields can be set based on event parameters
-  entity.MorphoBlue_id = event.params.id
-  entity.prevBorrowRate = event.params.prevBorrowRate
-
-  // Entities can be written to the store with `.save()`
-  entity.save()
-
-  // Note: If a handler doesn't require existing field values, it is faster
-  // _not_ to load the entity from the store. Instead, create it fresh with
-  // `new Entity(...)`, set the fields that should be updated and save the
-  // entity back to the store. Fields that were not set or unset remain
-  // unchanged, allowing for partial updates to be applied.
-
-  // It is also possible to access smart contracts from mappings. For
-  // example, the contract that has emitted the event can be connected to
-  // with:
-  //
-  // let contract = Contract.bind(event.address)
-  //
-  // The following functions can then be called on this contract to access
-  // state variables and other data:
-  //
-  // - contract.DOMAIN_SEPARATOR(...)
-  // - contract.borrow(...)
-  // - contract.extSloads(...)
-  // - contract.feeRecipient(...)
-  // - contract.idToMarketParams(...)
-  // - contract.isAuthorized(...)
-  // - contract.isIrmEnabled(...)
-  // - contract.isLltvEnabled(...)
-  // - contract.liquidate(...)
-  // - contract.market(...)
-  // - contract.nonce(...)
-  // - contract.owner(...)
-  // - contract.position(...)
-  // - contract.repay(...)
-  // - contract.supply(...)
-  // - contract.withdraw(...)
+  const market = accrueMarketRewards(event.params.id, event.block);
+  const feeRecipient = _FeeRecipient.load("1");
+  if(feeRecipient === null && !event.params.feeShares.isZero()) {
+    log.critical("Fee recipient not set, but fee shares are not zero", []);
+  } else {
+    if(feeRecipient !== null) {
+      accrueUserRewards(market, Address.fromBytes(feeRecipient.feeReceiver), event.params.feeShares, event.block);
+    }
+  }
 }
 
 export function handleBorrow(event: Borrow): void {}
 
-export function handleCreateMarket(event: CreateMarket): void {}
+export function handleCreateMarket(event: CreateMarket): void {
+  const currentEpoch = syncEpochs(event.block);
+  if(!isRewardedMarket(event.params.id)) {
+    return;
+  }
+    let market = new Market(event.params.id);
+    market.supplyShares = BigInt.zero();
+    market.supplyShares = BigInt.zero();
+
+    if(currentEpoch.epoch != null) {
+      // TODO: do we really want to allow distribution on not already existing markets?
+      const marketEpoch = MarketEpoch.load(event.params.id.toHexString() + "-" + currentEpoch.epoch);
+        if(marketEpoch != null) {
+          market.lastEpoch = marketEpoch.id;
+        }
+    }
+    market.lastCheckTimestamp = event.block.timestamp;
+    market.rewardsAccrued = BigInt.zero();
+    market.save();
+}
 
 export function handleEnableIrm(event: EnableIrm): void {}
 
@@ -98,14 +86,36 @@ export function handleSetAuthorization(event: SetAuthorization): void {}
 
 export function handleSetFee(event: SetFee): void {}
 
-export function handleSetFeeRecipient(event: SetFeeRecipient): void {}
+export function handleSetFeeRecipient(event: SetFeeRecipient): void {
+  syncEpochs(event.block);
+
+  let feeRecipient = _FeeRecipient.load("1");
+  if(feeRecipient === null) {
+    feeRecipient = new _FeeRecipient("1");
+  }
+  feeRecipient.feeReceiver = event.params.newFeeRecipient;
+}
 
 export function handleSetOwner(event: SetOwner): void {}
 
-export function handleSupply(event: Supply): void {}
+export function handleSupply(event: Supply): void {
+  syncEpochs(event.block);
+  if(!isRewardedMarket(event.params.id)) {
+    return;
+  }
+  const market = accrueMarketRewards(event.params.id, event.block);
+  accrueUserRewards(market, event.params.onBehalf, event.params.shares, event.block);
+}
 
 export function handleSupplyCollateral(event: SupplyCollateral): void {}
 
-export function handleWithdraw(event: Withdraw): void {}
+export function handleWithdraw(event: Withdraw): void {
+  syncEpochs(event.block);
+  if(!isRewardedMarket(event.params.id)) {
+    return;
+  }
+  const market = accrueMarketRewards(event.params.id, event.block);
+  accrueUserRewards(market, event.params.onBehalf, event.params.shares.neg(), event.block);
+}
 
 export function handleWithdrawCollateral(event: WithdrawCollateral): void {}
