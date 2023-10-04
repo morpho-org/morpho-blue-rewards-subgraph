@@ -23,25 +23,21 @@ import {_FeeRecipient, CurrentEpoch, Epoch, Market, MarketEpoch} from "../genera
 import {syncEpochs} from "./syncEpochs";
 import {accrueMarketRewards} from "./accrueMarketRewards";
 import {accrueUserRewards} from "./accrueUserRewards";
-const whitelistedMarkets = new Map<Bytes, boolean>()
-whitelistedMarkets.set(Bytes.fromHexString("0x"), true);
+import {isRewardedMarket} from "./whitelist";
 
-function isRewardedMarket(marketId: Bytes): boolean {
-  return !!whitelistedMarkets.has(marketId) && whitelistedMarkets.get(marketId);
-}
 
 export function handleAccrueInterest(event: AccrueInterest): void {
 
-  const currentEpoch = syncEpochs(event.block);
   if(!isRewardedMarket(event.params.id)) {
     return;
   }
-  const market = accrueMarketRewards(event.params.id, event.block);
   const feeRecipient = _FeeRecipient.load("1");
   if(feeRecipient === null && !event.params.feeShares.isZero()) {
     log.critical("Fee recipient not set, but fee shares are not zero", []);
   } else {
     if(feeRecipient !== null) {
+      syncEpochs(event.block);
+      const market = accrueMarketRewards(event.params.id, event.block);
       accrueUserRewards(market, Address.fromBytes(feeRecipient.feeReceiver), event.params.feeShares, event.block);
     }
   }
@@ -99,10 +95,10 @@ export function handleSetFeeRecipient(event: SetFeeRecipient): void {
 export function handleSetOwner(event: SetOwner): void {}
 
 export function handleSupply(event: Supply): void {
-  syncEpochs(event.block);
   if(!isRewardedMarket(event.params.id)) {
     return;
   }
+  syncEpochs(event.block);
   const market = accrueMarketRewards(event.params.id, event.block);
   accrueUserRewards(market, event.params.onBehalf, event.params.shares, event.block);
 }
@@ -110,10 +106,10 @@ export function handleSupply(event: Supply): void {
 export function handleSupplyCollateral(event: SupplyCollateral): void {}
 
 export function handleWithdraw(event: Withdraw): void {
-  syncEpochs(event.block);
   if(!isRewardedMarket(event.params.id)) {
     return;
   }
+  syncEpochs(event.block);
   const market = accrueMarketRewards(event.params.id, event.block);
   accrueUserRewards(market, event.params.onBehalf, event.params.shares.neg(), event.block);
 }
