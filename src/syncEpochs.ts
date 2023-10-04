@@ -14,13 +14,13 @@ export function getNextMarketEpoch(market: Market, ts: BigInt): MarketEpoch | nu
         if(marketEpoch == null) {
             // No market epoch for this market, we can check the next one
             if(epoch.nextEpoch === null) return null;
-            i = epoch.nextEpoch;
+            i = epoch.nextEpoch!;
         }
         if(epoch.start > ts) {
             return marketEpoch!;
         }
         if(epoch.nextEpoch === null) return null;
-        i = epoch.nextEpoch;
+        i = epoch.nextEpoch!;
 
     }
 
@@ -113,15 +113,19 @@ function setupEpochs(): CurrentEpoch {
 }
 
 export function getEpochFromTimestamp(ts: BigInt, epochFromId: string | null): Epoch | null {
-    let epoch = Epoch.load(epochFromId || "1");
-    while(epoch != null) {
+    let id = epochFromId;
+    if(id === null) {
+        id = "1";
+    }
+    let epoch = Epoch.load(id);
+    while(epoch !== null) {
         if(epoch.start <= ts && ts < epoch.end) {
             return epoch;
         }
-        if(epoch.nextEpoch == null) {
+        if(epoch.nextEpoch === null) {
             return null;
         }
-        epoch = Epoch.load(epoch.nextEpoch);
+        epoch = Epoch.load(epoch.nextEpoch as string);
     }
     return null;
 
@@ -132,7 +136,12 @@ export function syncEpochs(block: ethereum.Block): CurrentEpoch {
     if(!currentEpoch) {
         currentEpoch = setupEpochs();
     }
-    currentEpoch.epoch = getEpochFromTimestamp(block.timestamp, currentEpoch.epoch)?.id || null;
+    const _epoch = getEpochFromTimestamp(block.timestamp, currentEpoch.epoch)
+    if(_epoch != null) {
+        currentEpoch.epoch = _epoch.id;
+    } else {
+        currentEpoch.epoch = null;
+    }
     currentEpoch.save();
     return currentEpoch
 }

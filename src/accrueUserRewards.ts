@@ -48,25 +48,21 @@ export function accrueUserRewards(
         user.rewardsAccrued = BigInt.zero();
         user.save();
     }
-    let userBalance = Balance.load(userAddress.toHexString() + "-" + market.id);
+    let userBalance = Balance.load(userAddress.toHexString() + "-" + market.id.toHexString());
     if(!userBalance) {
-        userBalance = new Balance(userAddress.toHexString() + "-" + market.id);
+        userBalance = new Balance(userAddress.toHexString() + "-" + market.id.toHexString());
         userBalance.market = market.id;
         userBalance.user = userAddress;
         userBalance.supplyShares = BigInt.zero();
         userBalance.lastEpochUpdate = currentEpoch.id;
         userBalance.lastUpdateTimestamp = block.timestamp;
         userBalance.save();
-        // The user does not have a balance for this market, so they are not accruing rewards on the past.
-        return;
     }
     if(userBalance.supplyShares === BigInt.zero()) {
         userBalance.supplyShares = BigInt.zero();
         userBalance.lastEpochUpdate = currentEpoch.id;
         userBalance.lastUpdateTimestamp = block.timestamp;
         userBalance.save();
-        // The user does not have a balance for this market, so they are not accruing rewards on the past.
-        return;
     }
 
     let epochOfLastUpdate = getEpochFromTimestamp(userBalance.lastUpdateTimestamp, null);
@@ -85,22 +81,22 @@ export function accrueUserRewards(
         }
     }
     let epoch: Epoch | null = null;
-    if(currentEpoch.epoch) epoch = Epoch.load(currentEpoch.epoch);
+    if(currentEpoch.epoch) epoch = Epoch.load(currentEpoch.epoch!);
 
     while(epochOfLastUpdate !== null && epochOfLastUpdate !== epoch) {
         // And then we compute all the epochs of the past
 
-        const marketEpoch = MarketEpoch.load(market.id + "-" + epochOfLastUpdate.id);
+        const marketEpoch = MarketEpoch.load(market.id.toHexString() + "-" + epochOfLastUpdate.id);
         if(marketEpoch == null) {
             // There is no rewards for this market into this epoch
-            if(epochOfLastUpdate.nextEpoch) epochOfLastUpdate = Epoch.load(epochOfLastUpdate.nextEpoch);
+            if(epochOfLastUpdate.nextEpoch) epochOfLastUpdate = Epoch.load(epochOfLastUpdate.nextEpoch!);
         } else {
             accrueOneEpochUserRewards(marketEpoch, user, userBalance, "accrueUserRewards");
         }
     }
     // And then handle the current epoch, the not finished one.
     if(epoch) {
-        const marketEpoch = MarketEpoch.load(market.id + "-" + epoch.id);
+        const marketEpoch = MarketEpoch.load(market.id.toHexString() + "-" + epoch.id);
         if(marketEpoch !== null) {
             accrueOneEpochUserRewards(marketEpoch, user, userBalance, "accrueUserRewards");
         }

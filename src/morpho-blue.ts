@@ -15,11 +15,10 @@ import {
   SetFeeRecipient,
   SetOwner,
   Supply,
-  SupplyCollateral,
   Withdraw,
-  WithdrawCollateral
+  WithdrawCollateral, SupplyCollateral
 } from "../generated/MorphoBlue/MorphoBlue"
-import {_FeeRecipient, CurrentEpoch, Epoch, Market, MarketEpoch} from "../generated/schema";
+import {_FeeRecipient, Market, MarketEpoch} from "../generated/schema";
 import {syncEpochs} from "./syncEpochs";
 import {accrueMarketRewards} from "./accrueMarketRewards";
 import {accrueUserRewards} from "./accrueUserRewards";
@@ -54,9 +53,9 @@ export function handleCreateMarket(event: CreateMarket): void {
     market.supplyShares = BigInt.zero();
     market.supplyShares = BigInt.zero();
 
-    if(currentEpoch.epoch != null) {
+    if(currentEpoch.epoch !== null) {
       // TODO: do we really want to allow distribution on not already existing markets?
-      const marketEpoch = MarketEpoch.load(event.params.id.toHexString() + "-" + currentEpoch.epoch);
+      const marketEpoch = MarketEpoch.load(event.params.id.toHexString() + "-" + currentEpoch.epoch!);
         if(marketEpoch != null) {
           market.lastEpoch = marketEpoch.id;
         }

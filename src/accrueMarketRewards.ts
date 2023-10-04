@@ -89,7 +89,7 @@ export function accrueMarketRewards(
 
     let currentMarketEpoch: MarketEpoch | null = null;
     if (epochPointer.epoch !== null) {
-        currentMarketEpoch = MarketEpoch.load(marketId.toHexString() + "-" + epochPointer.epoch.toString());
+        currentMarketEpoch = MarketEpoch.load(marketId.toHexString() + "-" + epochPointer.epoch!.toString());
     }
 
     if (currentMarketEpoch === null) {
@@ -139,9 +139,9 @@ export function accrueMarketRewards(
             // 1: The last market check
             // 2: the current timestamp
             // There is one epoch to finish in this situation
-            const marketEpoch = MarketEpoch.load(market.lastEpoch);
+            const marketEpoch = MarketEpoch.load(market.lastEpoch!);
             if (marketEpoch == null) {
-                log.critical("Situation 3: Market epoch not found: {}", [market.lastEpoch]);
+                log.critical("Situation 3: Market epoch not found: {}", [market.lastEpoch!]);
                 return market;
             }
             const epoch = Epoch.load(marketEpoch.epoch.toString());
@@ -153,7 +153,11 @@ export function accrueMarketRewards(
 
             const followingMarketEpoch = getNextMarketEpoch(market, epoch.end);
             const nextMarketEpoch = getNextMarketEpoch(market, block.timestamp);
-            if (followingMarketEpoch !== null && nextMarketEpoch?.id !== followingMarketEpoch.id) {
+            let nextMarketEpochId: string | null = null;
+            if (nextMarketEpoch !== null) {
+                nextMarketEpochId = nextMarketEpoch.id;
+            }
+            if (followingMarketEpoch !== null && nextMarketEpochId !== followingMarketEpoch.id) {
 
                 // Situation 4:
 
@@ -208,9 +212,9 @@ export function accrueMarketRewards(
     // market.lastEpoch !== null
     // currentMarketEpoch !== null
 
-    const lastMarketEpoch = MarketEpoch.load(market.lastEpoch);
+    const lastMarketEpoch = MarketEpoch.load(market.lastEpoch!);
     if (lastMarketEpoch == null) {
-        log.critical("Situation 6: Market epoch not found: {}", [market.lastEpoch]);
+        log.critical("Situation 6: Market epoch not found: {}", [market.lastEpoch!]);
         return market;
     }
     if (currentMarketEpoch.id === lastMarketEpoch.id) {
