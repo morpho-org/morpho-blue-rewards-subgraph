@@ -45,8 +45,6 @@ type Market @entity {
   totalBorrowShares: BigInt!
   totalCollateral: BigInt!
 
-  lastUpdateTimestamp: Int!
-
   morphoTx: [MorphoTx!]! @derivedFrom(field: "market")
   rewardsRates: [RewardsRate!]! @derivedFrom(field: "market")
   positions: [Position!]! @derivedFrom(field: "market")
@@ -70,7 +68,8 @@ type Position @entity {
   supplyShares: BigInt!
   borrowShares: BigInt!
   collateral: BigInt!
-  # TODO : rewards?
+
+  rewards: [PositionRewards!]! @derivedFrom(field: "position")
 }
 
 type PositionRewards @entity {
@@ -114,6 +113,8 @@ type RewardsRate @entity {
   supplyIndex: BigInt!
   borrowIndex: BigInt!
   collateralIndex: BigInt!
+
+  lastUpdateTimestamp: BigInt!
 
   rateUpdates: [RateUpdateTx!]! @derivedFrom(field: "rewardsRate")
 }
