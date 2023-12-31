@@ -8,6 +8,7 @@
     "create-local": "graph create --node http://localhost:8020/ morpho-org/morpho-blue-rewards",
     "remove-local": "graph remove --node http://localhost:8020/ morpho-org/morpho-blue-rewards",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 morpho-org/morpho-blue-rewards",
+    "deploy-hs": "graph deploy --node https://api.thegraph.com/deploy/ morpho-dev/morpho-blue-rewards",
     "test": "graph test",
     "lint": "eslint --ext .ts .",
     "lint:fix": "yarn lint --fix",

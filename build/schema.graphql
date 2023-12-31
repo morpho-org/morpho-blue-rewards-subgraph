@@ -1,13 +1,10 @@
-
-
 enum PositionType {
-  SUPPLY,
-  BORROW,
+  SUPPLY
+  BORROW
   COLLATERAL
 }
 
 type MorphoTx @entity {
-
   id: Bytes!
 
   type: PositionType!
@@ -25,20 +22,16 @@ type MorphoTx @entity {
   txIndex: BigInt!
   logIndex: BigInt!
   blockNumber: BigInt!
-
 }
 
 type User @entity {
-
   id: Bytes!
 
   morphoTx: [MorphoTx!]! @derivedFrom(field: "user")
   positions: [Position!]! @derivedFrom(field: "user")
-
 }
 
 type Market @entity {
-
   id: Bytes!
 
   totalSupplyShares: BigInt!
@@ -48,9 +41,7 @@ type Market @entity {
   morphoTx: [MorphoTx!]! @derivedFrom(field: "market")
   rewardsRates: [RewardsRate!]! @derivedFrom(field: "market")
   positions: [Position!]! @derivedFrom(field: "market")
-
 }
-
 
 type URD @entity {
   id: Bytes!
@@ -59,7 +50,6 @@ type URD @entity {
 }
 
 type Position @entity {
-
   "concat of the user address and the market id"
   id: Bytes!
 
@@ -73,7 +63,6 @@ type Position @entity {
 }
 
 type PositionRewards @entity {
-
   "concat of the position id and the rewards rate id"
   id: Bytes!
 
@@ -87,13 +76,9 @@ type PositionRewards @entity {
   positionSupplyAccrued: BigInt!
   positionBorrowAccrued: BigInt!
   positionCollateralAccrued: BigInt!
-
-
 }
 
-
 type RewardsRate @entity {
-
   "concat of the sender, market id, urd and the rewards token address"
   id: Bytes!
   sender: Bytes!
@@ -120,7 +105,6 @@ type RewardsRate @entity {
 }
 
 type RateUpdateTx @entity {
-
   id: Bytes!
 
   sender: Bytes!
@@ -144,5 +128,4 @@ type RateUpdateTx @entity {
   txIndex: BigInt!
   logIndex: BigInt!
   blockNumber: BigInt!
-
 }

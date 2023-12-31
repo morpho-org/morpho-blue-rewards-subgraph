@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: Morpho
-    network: mainnet
+    network: goerli
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0x64c7044050Ba0431252df24fEd4d9635a275CB41"
       abi: Morpho
-      startBlock: 0
+      startBlock: 10038133
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -39,11 +39,13 @@ dataSources:
           handler: handleAccrueInterest
         - event: Borrow(indexed bytes32,address,indexed address,indexed address,uint256,uint256)
           handler: handleBorrow
-        - event: IncrementNonce(indexed address,indexed address,uint256)
-          handler: handleIncrementNonce
         - event: Liquidate(indexed bytes32,indexed address,indexed
             address,uint256,uint256,uint256,uint256,uint256)
           handler: handleLiquidate
+          # On goerli, there is no the assets of the bad debt in the liquidate event.
+        - event: Liquidate(indexed bytes32,indexed address,indexed
+            address,uint256,uint256,uint256,uint256)
+          handler: handleLiquidateGoerli
         - event: Repay(indexed bytes32,indexed address,indexed address,uint256,uint256)
           handler: handleRepay
         - event: Supply(indexed bytes32,indexed address,indexed address,uint256,uint256)
@@ -54,14 +56,14 @@ dataSources:
           handler: handleWithdraw
         - event: WithdrawCollateral(indexed bytes32,address,indexed address,indexed address,uint256)
           handler: handleWithdrawCollateral
-      file: ./src/morpho.ts
+      file: ./src/handlers/morpho.ts
   - kind: ethereum
     name: MetaMorphoFactory
-    network: mainnet
+    network: goerli
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0x75F40875af97710e758330F595A22F8319523A23"
       abi: MetaMorphoFactory
-      startBlock: 0
+      startBlock: 10040955
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -76,14 +78,14 @@ dataSources:
             CreateMetaMorpho(indexed address,indexed address,address,uint256,indexed
             address,string,string,bytes32)
           handler: handleCreateMetaMorpho
-      file: ./src/meta-morpho-factory.ts
+      file: ./src/handlers/meta-morpho-factory.ts
   - kind: ethereum
     name: EmissionDataProvider
-    network: mainnet
+    network: goerli
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0xF01c1f93D59A92Bb2e13c92f2ee1d8456b1b9e41"
       abi: EmissionDataProvider
-      startBlock: 0
+      startBlock: 10300432
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -97,14 +99,14 @@ dataSources:
         - event: RewardsEmissionSet(indexed address,indexed bytes32,indexed
             address,address,(uint256,uint256,uint256))
           handler: handleRewardsEmissionSet
-      file: ./src/emission-data-provider.ts
+      file: ./src/handlers/emission-data-provider.ts
   - kind: ethereum
     name: URDFactory
-    network: mainnet
+    network: goerli
     source:
-      address: "0x0000000000000000000000000000000000000000"
+      address: "0xE7675D5d9E3Add763bCFBC8F7A0eb7BCc00FfBeD"
       abi: URDFactory
-      startBlock: 0
+      startBlock: 10300370
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -118,11 +120,11 @@ dataSources:
         - event: UrdCreated(indexed address,indexed address,indexed
             address,uint256,bytes32,bytes32,bytes32)
           handler: handleUrdCreated
-      file: ./src/urd-factory.ts
+      file: ./src/handlers/urd-factory.ts
 templates:
   - kind: ethereum
     name: URD
-    network: mainnet
+    network: goerli
     source:
       abi: URD
     mapping:
@@ -155,10 +157,10 @@ templates:
           handler: handleRootUpdaterSet
         - event: TimelockSet(uint256)
           handler: handleTimelockSet
-      file: ./src/urd.ts
+      file: ./src/handlers/urd.ts
   - kind: ethereum
     name: MetaMorpho
-    network: mainnet
+    network: goerli
     source:
       abi: MetaMorpho
     mapping:
@@ -182,4 +184,4 @@ templates:
           handler: handleTransfer
         - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
           handler: handleWithdraw
-      file: ./src/meta-morpho.ts
+      file: ./src/handlers/meta-morpho.ts
