@@ -30,6 +30,7 @@ type User @entity {
   morphoTx: [MorphoTx!]! @derivedFrom(field: "user")
   positions: [Position!]! @derivedFrom(field: "user")
   ownedRewardPrograms: [RewardProgram!]! @derivedFrom(field: "sender")
+  rewardProgramAccruals: [UserRewardProgramAccrual!]! @derivedFrom(field: "user")
 }
 
 type Market @entity {
@@ -87,6 +88,18 @@ type RewardProgram @entity {
     rewardToken: Bytes!
 
     rates: [RewardsRate!]! @derivedFrom(field: "rewardProgram")
+}
+
+type UserRewardProgramAccrual @entity {
+    "concat of the user address and the reward program id"
+    id: Bytes!
+
+    user: User!
+    rewardProgram: RewardProgram!
+
+    supplyRewardsAccrued: BigInt!
+    borrowRewardsAccrued: BigInt!
+    collateralRewardsAccrued: BigInt!
 }
 
 type RewardsRate @entity {

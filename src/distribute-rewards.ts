@@ -5,6 +5,7 @@ import {
   Position,
   PositionRewards,
   RewardsRate,
+  UserRewardProgramAccrual,
 } from "../generated/schema";
 
 import { ONE_YEAR, WAD } from "./constants";
@@ -56,10 +57,59 @@ export function distributeRewards(
     updatedRewards.save();
 
     if (position) {
+      const initialPositionRewards = PositionRewards.load(
+        position.id.concat(updatedRewards.id)
+      );
+
       const updatedPosition = accruePositionRewardsForOneRate(
         updatedRewards,
-        position
+        position.id
       );
+      // Then accrue the rewards for the user accrual program
+      let userAccrualId = position.user.concat(updatedRewards.rewardProgram);
+      let userAccrualProgram = UserRewardProgramAccrual.load(userAccrualId);
+      if (!userAccrualProgram) {
+        userAccrualProgram = new UserRewardProgramAccrual(userAccrualId);
+        userAccrualProgram.user = position.user;
+        userAccrualProgram.rewardProgram = updatedRewards.rewardProgram;
+        userAccrualProgram.supplyRewardsAccrued = BigInt.zero();
+        userAccrualProgram.borrowRewardsAccrued = BigInt.zero();
+        userAccrualProgram.collateralRewardsAccrued = BigInt.zero();
+      }
+      if (initialPositionRewards) {
+        userAccrualProgram.supplyRewardsAccrued =
+          userAccrualProgram.supplyRewardsAccrued.plus(
+            updatedPosition.positionSupplyAccrued.minus(
+              initialPositionRewards.positionSupplyAccrued
+            )
+          );
+        userAccrualProgram.borrowRewardsAccrued =
+          userAccrualProgram.borrowRewardsAccrued.plus(
+            updatedPosition.positionBorrowAccrued.minus(
+              initialPositionRewards.positionBorrowAccrued
+            )
+          );
+        userAccrualProgram.collateralRewardsAccrued =
+          userAccrualProgram.collateralRewardsAccrued.plus(
+            updatedPosition.positionCollateralAccrued.minus(
+              initialPositionRewards.positionCollateralAccrued
+            )
+          );
+      } else {
+        userAccrualProgram.supplyRewardsAccrued =
+          userAccrualProgram.supplyRewardsAccrued.plus(
+            updatedPosition.positionSupplyAccrued
+          );
+        userAccrualProgram.borrowRewardsAccrued =
+          userAccrualProgram.borrowRewardsAccrued.plus(
+            updatedPosition.positionBorrowAccrued
+          );
+        userAccrualProgram.collateralRewardsAccrued =
+          userAccrualProgram.collateralRewardsAccrued.plus(
+            updatedPosition.positionCollateralAccrued
+          );
+      }
+      userAccrualProgram.save();
       updatedPosition.save();
     }
   }
@@ -121,8 +171,13 @@ export function updateRewardsRate(
 
 export function accruePositionRewardsForOneRate(
   rewardsRate: RewardsRate,
-  position: Position
+  positionId: Bytes
 ): PositionRewards {
+  const position = Position.load(positionId);
+  if (!position) {
+    log.critical("Position {} not found", [positionId.toHexString()]);
+    return new PositionRewards(Bytes.empty());
+  }
   // We first update the indexes
 
   const positionRewardsId = position.id.concat(rewardsRate.id);
