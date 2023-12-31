@@ -1,5 +1,112 @@
 
+
+enum PositionType {
+  SUPPLY,
+  BORROW,
+  COLLATERAL
+}
+
+type MorphoTx @entity {
+
+  id: Bytes!
+
+  type: PositionType!
+
+  user: User!
+
+  market: Market!
+
+  shares: BigInt!
+
+  timestamp: BigInt!
+
+}
+
+type User @entity {
+
+  id: Bytes!
+
+  morphoTx: [MorphoTx!]! @derivedFrom(field: "user")
+  positions: [Position!]! @derivedFrom(field: "user")
+
+}
+
 type Market @entity {
 
-  id: ID!
+  id: Bytes!
+
+  totalSupplyShares: BigInt!
+  totalBorrowShares: BigInt!
+  totalCollateral: BigInt!
+
+  lastUpdateTimestamp: Int!
+
+  morphoTx: [MorphoTx!]! @derivedFrom(field: "market")
+  positions: [Position!]! @derivedFrom(field: "market")
+  rewardsRates: [RewardsRate!]! @derivedFrom(field: "market")
+  positions: [Position!]! @derivedFrom(field: "market")
+
+}
+
+
+type URD @entity {
+  id: Bytes!
+
+  rewardsRates: [RewardsRate!]! @derivedFrom(field: "urd")
+}
+
+type Position @entity {
+
+  "concat of the user address and the market id"
+  id: Bytes!
+
+  user: User!
+  market: Market!
+  supplyShares: BigInt!
+  borrowShares: BigInt!
+  collateral: BigInt!
+  # TODO : rewards?
+}
+
+type PositionRewards @entity {
+
+  "concat of the position id and the rewards rate id"
+  id: Bytes!
+
+  rewardsRate: RewardsRate!
+  position: Position!
+
+  positionSupplyIndex: BigInt!
+  positionBorrowIndex: BigInt!
+  positionCollateralIndex: BigInt!
+
+  positionSupplyAccrued: BigInt!
+  positionBorrowAccrued: BigInt!
+  positionCollateralAccrued: BigInt!
+
+
+}
+
+
+type RewardsRate @entity {
+
+  "concat of the market id, urd, availableAt and the rewards token address"
+  id: Bytes!
+  caller: Bytes!
+
+  urd: URD!
+
+  rewardsToken: Bytes!
+
+  market: Market!
+
+  supplyRatePerYear: BigInt!
+  borrowRatePerYear: BigInt!
+  collateralRatePerYear: BigInt!
+
+  availableAt: BigInt!
+
+  supplyIndex: BigInt!
+  borrowIndex: BigInt!
+  collateralIndex: BigInt!
 }

@@ -97,6 +97,27 @@ dataSources:
             address,address,(uint256,uint256,uint256))
           handler: handleRewardsEmissionSet
       file: ./src/emission-data-provider.ts
+  - kind: ethereum
+    name: URDFactory
+    network: mainnet
+    source:
+      address: "0x0000000000000000000000000000000000000000"
+      abi: URDFactory
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - UrdCreated
+      abis:
+        - name: URDFactory
+          file: ./abis/URDFactory.json
+      eventHandlers:
+        - event: UrdCreated(indexed address,indexed address,indexed
+            address,uint256,bytes32,bytes32,bytes32)
+          handler: handleUrdCreated
+      file: ./src/urd-factory.ts
 templates:
   - kind: ethereum
     name: URD
@@ -134,7 +155,6 @@ templates:
         - event: TimelockSet(uint256)
           handler: handleTimelockSet
       file: ./src/urd.ts
-
   - kind: ethereum
     name: MetaMorpho
     network: mainnet
