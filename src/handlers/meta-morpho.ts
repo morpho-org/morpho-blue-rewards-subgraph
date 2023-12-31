@@ -21,6 +21,8 @@ export function setupMetaMorpho(address: Bytes): MetaMorpho {
 }
 
 export function handleAccrueFee(event: AccrueFeeEvent): void {
+  if (event.params.feeShares.isZero()) return;
+
   const id = generateLogId(event);
 
   const mmTx = new MetaMorphoTx(id);
@@ -59,6 +61,12 @@ export function handleDeposit(event: DepositEvent): void {
 }
 
 export function handleTransfer(event: TransferEvent): void {
+  // Skip mint & burn transfer events.
+  if (
+    event.params.from.equals(Address.zero()) ||
+    event.params.to.equals(Address.zero())
+  )
+    return;
   const idFrom = generateLogId(event).concat(Bytes.fromI32(1 as i32));
 
   const mmTxFrom = new MetaMorphoTx(idFrom);
