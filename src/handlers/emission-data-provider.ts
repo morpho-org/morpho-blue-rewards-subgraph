@@ -1,17 +1,31 @@
 import { BigInt, Bytes } from "@graphprotocol/graph-ts";
 
 import { RewardsEmissionSet as RewardsEmissionSetEvent } from "../../generated/EmissionDataProvider/EmissionDataProvider";
-import { RateUpdateTx, RewardsRate } from "../../generated/schema";
+import {
+  RateUpdateTx,
+  RewardProgram,
+  RewardsRate,
+} from "../../generated/schema";
 import { updateRewardsRate } from "../distribute-rewards";
 import { setupMarket, setupURD } from "../initializers";
 
 export const INITIAL_INDEX = BigInt.fromI32(1e18 as i32);
 
 export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
-  const id = event.params.sender
-    .concat(event.params.market)
-    .concat(event.params.urd)
-    .concat(event.params.rewardToken);
+  const rewardProgramId = event.params.sender
+    .concat(event.params.rewardToken)
+    .concat(event.params.urd);
+
+  let rewardProgram = RewardProgram.load(rewardProgramId);
+  if (!rewardProgram) {
+    rewardProgram = new RewardProgram(rewardProgramId);
+    rewardProgram.sender = event.params.sender;
+    rewardProgram.rewardToken = event.params.rewardToken;
+    rewardProgram.urd = setupURD(event.params.urd).id;
+    rewardProgram.save();
+  }
+
+  const id = rewardProgram.id.concat(event.params.market);
   let rewardsRate = RewardsRate.load(id);
 
   if (!rewardsRate) {
@@ -19,9 +33,7 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
     rewardsRate.supplyIndex = INITIAL_INDEX;
     rewardsRate.borrowIndex = INITIAL_INDEX;
     rewardsRate.collateralIndex = INITIAL_INDEX;
-    rewardsRate.sender = event.params.sender;
-    rewardsRate.urd = setupURD(event.params.urd).id;
-    rewardsRate.rewardToken = event.params.rewardToken;
+    rewardsRate.rewardProgram = rewardProgram.id;
     rewardsRate.market = setupMarket(event.params.market).id;
     rewardsRate.lastUpdateTimestamp = event.block.timestamp;
   } else {

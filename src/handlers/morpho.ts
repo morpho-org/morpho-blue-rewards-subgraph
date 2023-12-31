@@ -1,4 +1,4 @@
-import { Address, Bytes } from "@graphprotocol/graph-ts";
+import { Address, Bytes, ethereum } from "@graphprotocol/graph-ts";
 
 import {
   AccrueInterest as AccrueInterestEvent,
@@ -16,13 +16,14 @@ import { handleMorphoTx } from "../distribute-rewards";
 import { setupMarket, setupUser } from "../initializers";
 import { PositionType } from "../utils";
 
+function generateLogId(event: ethereum.Event): Bytes {
+  return event.transaction.hash;
+}
 export function handleAccrueInterest(event: AccrueInterestEvent): void {
   if (event.params.feeShares.isZero()) return;
 
   // We consider the fees accrued as a supply.
-  const id = event.transaction.hash.concat(
-    Bytes.fromHexString(event.logIndex.toHexString())
-  );
+  const id = generateLogId(event);
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.SUPPLY;
   // TODO: retrieve the fee receiver.
@@ -43,9 +44,7 @@ export function handleAccrueInterest(event: AccrueInterestEvent): void {
 }
 
 export function handleBorrow(event: BorrowEvent): void {
-  const id = event.transaction.hash.concat(
-    Bytes.fromHexString(event.logIndex.toHexString())
-  );
+  const id = generateLogId(event);
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.BORROW;
   morphoTx.user = setupUser(event.params.onBehalf).id;
@@ -110,9 +109,7 @@ export function handleLiquidate(event: LiquidateEvent): void {
 }
 
 export function handleRepay(event: RepayEvent): void {
-  const id = event.transaction.hash.concat(
-    Bytes.fromHexString(event.logIndex.toHexString())
-  );
+  const id = generateLogId(event);
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.BORROW;
   morphoTx.user = setupUser(event.params.onBehalf).id;
@@ -132,9 +129,8 @@ export function handleRepay(event: RepayEvent): void {
 }
 
 export function handleSupply(event: SupplyEvent): void {
-  const id = event.transaction.hash.concat(
-    Bytes.fromHexString(event.logIndex.toHexString())
-  );
+  const id = generateLogId(event);
+
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.SUPPLY;
   morphoTx.user = setupUser(event.params.onBehalf).id;
@@ -154,9 +150,7 @@ export function handleSupply(event: SupplyEvent): void {
 }
 
 export function handleSupplyCollateral(event: SupplyCollateralEvent): void {
-  const id = event.transaction.hash.concat(
-    Bytes.fromHexString(event.logIndex.toHexString())
-  );
+  const id = generateLogId(event);
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.COLLATERAL;
   morphoTx.user = setupUser(event.params.onBehalf).id;
@@ -176,9 +170,7 @@ export function handleSupplyCollateral(event: SupplyCollateralEvent): void {
 }
 
 export function handleWithdraw(event: WithdrawEvent): void {
-  const id = event.transaction.hash.concat(
-    Bytes.fromHexString(event.logIndex.toHexString())
-  );
+  const id = generateLogId(event);
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.SUPPLY;
   morphoTx.user = setupUser(event.params.onBehalf).id;
@@ -198,9 +190,7 @@ export function handleWithdraw(event: WithdrawEvent): void {
 }
 
 export function handleWithdrawCollateral(event: WithdrawCollateralEvent): void {
-  const id = event.transaction.hash.concat(
-    Bytes.fromHexString(event.logIndex.toHexString())
-  );
+  const id = generateLogId(event);
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.COLLATERAL;
   morphoTx.user = setupUser(event.params.onBehalf).id;

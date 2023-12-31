@@ -29,6 +29,7 @@ type User @entity {
 
   morphoTx: [MorphoTx!]! @derivedFrom(field: "user")
   positions: [Position!]! @derivedFrom(field: "user")
+  ownedRewardPrograms: [RewardProgram!]! @derivedFrom(field: "sender")
 }
 
 type Market @entity {
@@ -46,7 +47,7 @@ type Market @entity {
 type URD @entity {
   id: Bytes!
 
-  rewardsRates: [RewardsRate!]! @derivedFrom(field: "urd")
+  rewardPrograms: [RewardProgram!]! @derivedFrom(field: "urd")
 }
 
 type Position @entity {
@@ -78,14 +79,20 @@ type PositionRewards @entity {
   positionCollateralAccrued: BigInt!
 }
 
+type RewardProgram @entity {
+    "concat of the sender address, reward token address and the URD address"
+    id: Bytes!
+    sender: User!
+    urd: URD!
+    rewardToken: Bytes!
+
+    rates: [RewardsRate!]! @derivedFrom(field: "rewardProgram")
+}
+
 type RewardsRate @entity {
-  "concat of the sender, market id, urd and the rewards token address"
+  "concat of the RewardProgram id & the Market ID"
   id: Bytes!
-  sender: Bytes!
-
-  urd: URD!
-
-  rewardToken: Bytes!
+  rewardProgram: RewardProgram!
 
   market: Market!
 
@@ -128,4 +135,70 @@ type RateUpdateTx @entity {
   txIndex: BigInt!
   logIndex: BigInt!
   blockNumber: BigInt!
+}
+
+
+type MetaMorpho @entity {
+    id: Bytes!
+
+    totalShares: BigInt!
+
+    morphoTx: [MetaMorphoTx!]! @derivedFrom(field: "metaMorpho")
+
+}
+
+type MetaMorphoPosition @entity {
+      id: Bytes!
+
+      metaMorpho: MetaMorpho!
+
+      user: User!
+
+      shares: BigInt!
+
+}
+
+type MetaMorphoRewards @entity {
+     id: Bytes!
+
+    metaMorpho: MetaMorpho!
+
+    program: RewardProgram!
+
+
+    lastIndex: BigInt!
+    accrued: BigInt!
+}
+
+type MetaMorphoPositionRewards @entity {
+
+        " concat of the metamorpho rewards id and the position id"
+      id: Bytes!
+
+      metaMorphoRewards: MetaMorphoRewards!
+
+      position: MetaMorphoPosition!
+
+      lastIndex: BigInt!
+
+      accrued: BigInt!
+}
+
+type MetaMorphoTx @entity {
+
+    id: Bytes!
+
+    metaMorpho: MetaMorpho!
+
+    user: User!
+
+    shares: BigInt!
+
+    timestamp: BigInt!
+
+    # Additionals informations
+    txHash: Bytes!
+    txIndex: BigInt!
+    logIndex: BigInt!
+    blockNumber: BigInt!
 }
