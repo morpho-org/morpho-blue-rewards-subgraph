@@ -1,4 +1,4 @@
-import { Address, Bytes, ethereum } from "@graphprotocol/graph-ts";
+import { Address, Bytes } from "@graphprotocol/graph-ts";
 
 import {
   AccrueInterest as AccrueInterestEvent,
@@ -14,11 +14,8 @@ import {
 import { MorphoTx } from "../../generated/schema";
 import { handleMorphoTx } from "../distribute-rewards";
 import { setupMarket, setupUser } from "../initializers";
-import { PositionType } from "../utils";
+import { generateLogId, PositionType } from "../utils";
 
-function generateLogId(event: ethereum.Event): Bytes {
-  return event.transaction.hash;
-}
 export function handleAccrueInterest(event: AccrueInterestEvent): void {
   if (event.params.feeShares.isZero()) return;
 
