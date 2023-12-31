@@ -27,32 +27,32 @@
     "type": "event",
     "name": "AccrueInterest",
     "inputs": [
-    {
-      "name": "id",
-      "type": "bytes32",
-      "indexed": true,
-      "internalType": "Id"
-    },
-    {
-      "name": "prevBorrowRate",
-      "type": "uint256",
-      "indexed": false,
-      "internalType": "uint256"
-    },
-    {
-      "name": "interest",
-      "type": "uint256",
-      "indexed": false,
-      "internalType": "uint256"
-    },
-    {
-      "name": "feeShares",
-      "type": "uint256",
-      "indexed": false,
-      "internalType": "uint256"
-    }
-  ],
-  "anonymous": false
+      {
+        "name": "id",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "Id"
+      },
+      {
+        "name": "prevBorrowRate",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "interest",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "feeShares",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
   },
   {
     "type": "event",

@@ -4,33 +4,34 @@ import {
   test,
   clearStore,
   beforeAll,
-  afterAll
-} from "matchstick-as/assembly/index"
-import { BigInt, Address, Bytes } from "@graphprotocol/graph-ts"
-import { AccrueFee } from "../generated/schema"
-import { AccrueFee as AccrueFeeEvent } from "../generated/MetaMorpho/MetaMorpho"
-import { handleAccrueFee } from "../src/meta-morpho"
-import { createAccrueFeeEvent } from "./meta-morpho-utils"
+  afterAll,
+} from "matchstick-as/assembly/index";
+
+import { BigInt } from "@graphprotocol/graph-ts";
+
+import { handleAccrueFee } from "../src/handlers/meta-morpho";
+
+import { createAccrueFeeEvent } from "./meta-morpho-utils";
 
 // Tests structure (matchstick-as >=0.5.0)
 // https://thegraph.com/docs/en/developer/matchstick/#tests-structure-0-5-0
 
 describe("Describe entity assertions", () => {
   beforeAll(() => {
-    let feeShares = BigInt.fromI32(234)
-    let newAccrueFeeEvent = createAccrueFeeEvent(feeShares)
-    handleAccrueFee(newAccrueFeeEvent)
-  })
+    let feeShares = BigInt.fromI32(234);
+    let newAccrueFeeEvent = createAccrueFeeEvent(feeShares);
+    handleAccrueFee(newAccrueFeeEvent);
+  });
 
   afterAll(() => {
-    clearStore()
-  })
+    clearStore();
+  });
 
   // For more test scenarios, see:
   // https://thegraph.com/docs/en/developer/matchstick/#write-a-unit-test
 
   test("AccrueFee created and stored", () => {
-    assert.entityCount("AccrueFee", 1)
+    assert.entityCount("AccrueFee", 1);
 
     // 0xa16081f360e3847006db660bae1c6d1b2e17ec2a is the default address used in newMockEvent() function
     assert.fieldEquals(
@@ -38,9 +39,9 @@ describe("Describe entity assertions", () => {
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
       "feeShares",
       "234"
-    )
+    );
 
     // More assert options:
     // https://thegraph.com/docs/en/developer/matchstick/#asserts
-  })
-})
+  });
+});

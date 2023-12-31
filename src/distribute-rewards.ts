@@ -1,40 +1,18 @@
-import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
+import { BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
-import { Market, MorphoTx, Position, PositionRewards, RewardsRate } from "../generated/schema";
+import {
+  MorphoTx,
+  Position,
+  PositionRewards,
+  RewardsRate,
+} from "../generated/schema";
 
-import { INITIAL_INDEX } from "./emission-data-provider";
-import { setupUser } from "./morpho";
+import { ONE_YEAR, WAD } from "./constants";
+import { INITIAL_INDEX } from "./handlers/emission-data-provider";
+import { getMarket, setupPosition } from "./initializers";
 import { PositionType } from "./utils";
 
-const ONE_YEAR = BigInt.fromI32(365 * 24 * 60 * 60);
-const WAD = BigInt.fromI32(1e18 as i32);
-export function getMarket(marketId: Bytes): Market {
-  let market = Market.load(marketId);
-  if (!market) {
-    log.critical("Market {} not found", [marketId.toHexString()]);
-    return market!;
-  }
-
-  return market;
-}
-
-export function setupPosition(marketId: Bytes, userAddress: Bytes): Position {
-  const positionId = userAddress.concat(marketId);
-  let position = Position.load(positionId);
-
-  if (!position) {
-    position = new Position(positionId);
-    position.user = setupUser(userAddress).id;
-    position.market = marketId;
-    position.supplyShares = BigInt.zero();
-    position.borrowShares = BigInt.zero();
-    position.collateral = BigInt.zero();
-    position.save();
-  }
-
-  return position;
-}
-export function distributeRewards(morphoTx: MorphoTx): void {
+export function handleMorphoTx(morphoTx: MorphoTx): void {
   distributeRewards(morphoTx.market, morphoTx.user, morphoTx.timestamp);
 
   const position = setupPosition(morphoTx.market, morphoTx.user);
@@ -59,33 +37,53 @@ export function distributeRewards(morphoTx: MorphoTx): void {
   market.save();
 }
 
-export function distributeRewards(marketId: Bytes, userAddress: Bytes | null, timestamp: BigInt): void {
+export function distributeRewards(
+  marketId: Bytes,
+  userAddress: Bytes | null,
+  timestamp: BigInt
+): void {
   const market = getMarket(marketId);
 
-  const position = userAddress !== null ? setupPosition(marketId, userAddress) : null;
+  const position =
+    userAddress !== null ? setupPosition(marketId, userAddress) : null;
 
   const marketRewardsProgram = market.rewardsRates.load();
   for (let i = 0; i < marketRewardsProgram.length; i++) {
-    const updatedRewards = updateRewardsRate(marketRewardsProgram[i], timestamp);
+    const updatedRewards = updateRewardsRate(
+      marketRewardsProgram[i],
+      timestamp
+    );
     updatedRewards.save();
 
     if (position) {
-      const updatedPosition = accruePositionRewardsForOneRate(updatedRewards, position);
+      const updatedPosition = accruePositionRewardsForOneRate(
+        updatedRewards,
+        position
+      );
       updatedPosition.save();
     }
   }
 }
 
-export function updateRewardsRate(rewardsRate: RewardsRate, timestamp: BigInt): RewardsRate {
+export function updateRewardsRate(
+  rewardsRate: RewardsRate,
+  timestamp: BigInt
+): RewardsRate {
   const timeDelta = timestamp.minus(rewardsRate.lastUpdateTimestamp);
   if (!timeDelta.ge(BigInt.zero())) {
-    log.critical("Invalid time delta {} for rewards rate {}", [timeDelta.toString(), rewardsRate.id.toHexString()]);
+    log.critical("Invalid time delta {} for rewards rate {}", [
+      timeDelta.toString(),
+      rewardsRate.id.toHexString(),
+    ]);
     return rewardsRate;
   }
 
   const market = getMarket(rewardsRate.market);
 
-  if (!market.totalSupplyShares.isZero() && !rewardsRate.supplyRatePerYear.isZero()) {
+  if (
+    !market.totalSupplyShares.isZero() &&
+    !rewardsRate.supplyRatePerYear.isZero()
+  ) {
     const supplyAccrued = rewardsRate.supplyRatePerYear
       .times(timeDelta)
       .times(WAD)
@@ -93,7 +91,10 @@ export function updateRewardsRate(rewardsRate: RewardsRate, timestamp: BigInt): 
     rewardsRate.supplyIndex = rewardsRate.supplyIndex.plus(supplyAccrued);
   }
 
-  if (!market.totalBorrowShares.isZero() && !rewardsRate.borrowRatePerYear.isZero()) {
+  if (
+    !market.totalBorrowShares.isZero() &&
+    !rewardsRate.borrowRatePerYear.isZero()
+  ) {
     const borrowAccrued = rewardsRate.borrowRatePerYear
       .times(timeDelta)
       .times(WAD)
@@ -101,12 +102,16 @@ export function updateRewardsRate(rewardsRate: RewardsRate, timestamp: BigInt): 
     rewardsRate.borrowIndex = rewardsRate.borrowIndex.plus(borrowAccrued);
   }
 
-  if (market.totalCollateral.isZero() || rewardsRate.collateralRatePerYear.isZero()) {
+  if (
+    market.totalCollateral.isZero() ||
+    rewardsRate.collateralRatePerYear.isZero()
+  ) {
     const collateralAccrued = rewardsRate.collateralRatePerYear
       .times(timeDelta)
       .times(WAD)
       .div(ONE_YEAR.times(market.totalCollateral));
-    rewardsRate.collateralIndex = rewardsRate.collateralIndex.plus(collateralAccrued);
+    rewardsRate.collateralIndex =
+      rewardsRate.collateralIndex.plus(collateralAccrued);
   }
 
   rewardsRate.lastUpdateTimestamp = timestamp;
@@ -114,7 +119,10 @@ export function updateRewardsRate(rewardsRate: RewardsRate, timestamp: BigInt): 
   return rewardsRate;
 }
 
-export function accruePositionRewardsForOneRate(rewardsRate: RewardsRate, position: Position): PositionRewards {
+export function accruePositionRewardsForOneRate(
+  rewardsRate: RewardsRate,
+  position: Position
+): PositionRewards {
   // We first update the indexes
 
   const positionRewardsId = position.id.concat(rewardsRate.id);
@@ -132,15 +140,32 @@ export function accruePositionRewardsForOneRate(rewardsRate: RewardsRate, positi
     positionRewards.positionCollateralAccrued = BigInt.zero();
   }
 
-  positionRewards.positionSupplyAccrued = positionRewards.positionSupplyAccrued.plus(
-    position.supplyShares.times(rewardsRate.supplyIndex.minus(positionRewards.positionSupplyIndex)).div(WAD),
-  );
-  positionRewards.positionBorrowAccrued = positionRewards.positionBorrowAccrued.plus(
-    position.borrowShares.times(rewardsRate.borrowIndex.minus(positionRewards.positionBorrowIndex)).div(WAD),
-  );
-  positionRewards.positionCollateralAccrued = positionRewards.positionCollateralAccrued.plus(
-    position.collateral.times(rewardsRate.collateralIndex.minus(positionRewards.positionCollateralIndex)).div(WAD),
-  );
+  positionRewards.positionSupplyAccrued =
+    positionRewards.positionSupplyAccrued.plus(
+      position.supplyShares
+        .times(
+          rewardsRate.supplyIndex.minus(positionRewards.positionSupplyIndex)
+        )
+        .div(WAD)
+    );
+  positionRewards.positionBorrowAccrued =
+    positionRewards.positionBorrowAccrued.plus(
+      position.borrowShares
+        .times(
+          rewardsRate.borrowIndex.minus(positionRewards.positionBorrowIndex)
+        )
+        .div(WAD)
+    );
+  positionRewards.positionCollateralAccrued =
+    positionRewards.positionCollateralAccrued.plus(
+      position.collateral
+        .times(
+          rewardsRate.collateralIndex.minus(
+            positionRewards.positionCollateralIndex
+          )
+        )
+        .div(WAD)
+    );
 
   positionRewards.positionSupplyIndex = rewardsRate.supplyIndex;
   positionRewards.positionBorrowIndex = rewardsRate.borrowIndex;

@@ -1,22 +1,17 @@
-import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { BigInt, Bytes } from "@graphprotocol/graph-ts";
 
-import { RewardsEmissionSet as RewardsEmissionSetEvent } from "../generated/EmissionDataProvider/EmissionDataProvider";
-import { RateUpdateTx, RewardsRate, URD } from "../generated/schema";
+import { RewardsEmissionSet as RewardsEmissionSetEvent } from "../../generated/EmissionDataProvider/EmissionDataProvider";
+import { RateUpdateTx, RewardsRate } from "../../generated/schema";
+import { updateRewardsRate } from "../distribute-rewards";
+import { setupMarket, setupURD } from "../initializers";
 
-import { updateRewardsRate } from "./distribute-rewards";
-import { setupMarket } from "./morpho";
-
-export function setupURD(address: Address): URD {
-  let urd = URD.load(address);
-  if (!urd) {
-    urd = new URD(address);
-    urd.save();
-  }
-  return urd;
-}
 export const INITIAL_INDEX = BigInt.fromI32(1e18 as i32);
+
 export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
-  const id = event.params.sender.concat(event.params.market).concat(event.params.urd).concat(event.params.rewardToken);
+  const id = event.params.sender
+    .concat(event.params.market)
+    .concat(event.params.urd)
+    .concat(event.params.rewardToken);
   let rewardsRate = RewardsRate.load(id);
 
   if (!rewardsRate) {
@@ -34,24 +29,32 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
     rewardsRate = updateRewardsRate(rewardsRate, event.block.timestamp);
   }
 
-  rewardsRate.supplyRatePerYear = event.params.rewardsEmission.supplyRatePerYear;
-  rewardsRate.borrowRatePerYear = event.params.rewardsEmission.borrowRatePerYear;
-  rewardsRate.collateralRatePerYear = event.params.rewardsEmission.collateralRatePerYear;
+  rewardsRate.supplyRatePerYear =
+    event.params.rewardsEmission.supplyRatePerYear;
+  rewardsRate.borrowRatePerYear =
+    event.params.rewardsEmission.borrowRatePerYear;
+  rewardsRate.collateralRatePerYear =
+    event.params.rewardsEmission.collateralRatePerYear;
 
   rewardsRate.availableAt = event.block.timestamp;
 
   rewardsRate.save();
 
   const rateUpdateTx = new RateUpdateTx(
-    event.transaction.hash.concat(Bytes.fromHexString(event.logIndex.toHexString())),
+    event.transaction.hash.concat(
+      Bytes.fromHexString(event.logIndex.toHexString())
+    )
   );
   rateUpdateTx.sender = event.params.sender;
   rateUpdateTx.urd = event.params.urd;
   rateUpdateTx.rewardToken = event.params.rewardToken;
   rateUpdateTx.market = event.params.market;
-  rateUpdateTx.supplyRatePerYear = event.params.rewardsEmission.supplyRatePerYear;
-  rateUpdateTx.borrowRatePerYear = event.params.rewardsEmission.borrowRatePerYear;
-  rateUpdateTx.collateralRatePerYear = event.params.rewardsEmission.collateralRatePerYear;
+  rateUpdateTx.supplyRatePerYear =
+    event.params.rewardsEmission.supplyRatePerYear;
+  rateUpdateTx.borrowRatePerYear =
+    event.params.rewardsEmission.borrowRatePerYear;
+  rateUpdateTx.collateralRatePerYear =
+    event.params.rewardsEmission.collateralRatePerYear;
   rateUpdateTx.timestamp = event.block.timestamp;
 
   rateUpdateTx.txHash = event.transaction.hash;

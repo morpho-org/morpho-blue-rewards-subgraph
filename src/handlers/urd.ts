@@ -6,13 +6,15 @@ import {
   RootSet as RootSetEvent,
   RootUpdaterSet as RootUpdaterSetEvent,
   TimelockSet as TimelockSetEvent,
-} from "../generated/URD/URD";
+} from "../../generated/URD/URD";
 
 export function handleClaimed(event: ClaimedEvent): void {}
 
 export function handleOwnerSet(event: OwnerSetEvent): void {}
 
-export function handlePendingRootRevoked(event: PendingRootRevokedEvent): void {}
+export function handlePendingRootRevoked(
+  event: PendingRootRevokedEvent
+): void {}
 
 export function handlePendingRootSet(event: PendingRootSetEvent): void {}
 

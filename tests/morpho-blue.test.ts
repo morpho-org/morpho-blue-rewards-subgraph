@@ -1,9 +1,14 @@
-import { assert, describe, test, clearStore, beforeAll, afterAll } from "matchstick-as/assembly/index";
+import {
+  assert,
+  describe,
+  test,
+  clearStore,
+  beforeAll,
+  afterAll,
+} from "matchstick-as/assembly/index";
 
-import { Bytes, BigInt, Address } from "@graphprotocol/graph-ts";
+import { Bytes, BigInt } from "@graphprotocol/graph-ts";
 
-import { AccrueInterest } from "../generated/MorphoBlue/MorphoBlue";
-import { ExampleEntity } from "../generated/schema";
 import { handleAccrueInterest } from "../src/morpho-blue";
 
 import { createAccrueInterestEvent } from "./morpho-blue-utils";
@@ -17,7 +22,12 @@ describe("Describe entity assertions", () => {
     let prevBorrowRate = BigInt.fromI32(234);
     let interest = BigInt.fromI32(234);
     let feeShares = BigInt.fromI32(234);
-    let newAccrueInterestEvent = createAccrueInterestEvent(id, prevBorrowRate, interest, feeShares);
+    let newAccrueInterestEvent = createAccrueInterestEvent(
+      id,
+      prevBorrowRate,
+      interest,
+      feeShares
+    );
     handleAccrueInterest(newAccrueInterestEvent);
   });
 
@@ -32,9 +42,24 @@ describe("Describe entity assertions", () => {
     assert.entityCount("ExampleEntity", 1);
 
     // 0xa16081f360e3847006db660bae1c6d1b2e17ec2a is the default address used in newMockEvent() function
-    assert.fieldEquals("ExampleEntity", "0xa16081f360e3847006db660bae1c6d1b2e17ec2a", "prevBorrowRate", "234");
-    assert.fieldEquals("ExampleEntity", "0xa16081f360e3847006db660bae1c6d1b2e17ec2a", "interest", "234");
-    assert.fieldEquals("ExampleEntity", "0xa16081f360e3847006db660bae1c6d1b2e17ec2a", "feeShares", "234");
+    assert.fieldEquals(
+      "ExampleEntity",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a",
+      "prevBorrowRate",
+      "234"
+    );
+    assert.fieldEquals(
+      "ExampleEntity",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a",
+      "interest",
+      "234"
+    );
+    assert.fieldEquals(
+      "ExampleEntity",
+      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a",
+      "feeShares",
+      "234"
+    );
 
     // More assert options:
     // https://thegraph.com/docs/en/developer/matchstick/#asserts

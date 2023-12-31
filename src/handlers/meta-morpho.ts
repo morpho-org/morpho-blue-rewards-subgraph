@@ -3,7 +3,7 @@ import {
   Deposit as DepositEvent,
   Transfer as TransferEvent,
   Withdraw as WithdrawEvent,
-} from "../generated/MetaMorpho/MetaMorpho";
+} from "../../generated/MetaMorpho/MetaMorpho";
 
 export function handleAccrueFee(event: AccrueFeeEvent): void {}
 

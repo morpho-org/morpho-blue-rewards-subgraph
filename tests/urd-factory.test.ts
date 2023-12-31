@@ -9,18 +9,16 @@ import {
 
 import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
 
-import { handleCreateMetaMorpho } from "../src/handlers/meta-morpho-factory";
+import { handleUrdCreated } from "../src/handlers/urd-factory";
 
-import { createCreateMetaMorphoEvent } from "./meta-morpho-factory-utils";
+import { createUrdCreatedEvent } from "./urd-factory-utils";
 
 // Tests structure (matchstick-as >=0.5.0)
 // https://thegraph.com/docs/en/developer/matchstick/#tests-structure-0-5-0
 
 describe("Describe entity assertions", () => {
   beforeAll(() => {
-    let metaMorpho = Address.fromString(
-      "0x0000000000000000000000000000000000000001"
-    );
+    let urd = Address.fromString("0x0000000000000000000000000000000000000001");
     let caller = Address.fromString(
       "0x0000000000000000000000000000000000000001"
     );
@@ -28,23 +26,19 @@ describe("Describe entity assertions", () => {
       "0x0000000000000000000000000000000000000001"
     );
     let initialTimelock = BigInt.fromI32(234);
-    let asset = Address.fromString(
-      "0x0000000000000000000000000000000000000001"
-    );
-    let name = "Example string value";
-    let symbol = "Example string value";
+    let initialRoot = Bytes.fromI32(1234567890);
+    let initialIpfsHash = Bytes.fromI32(1234567890);
     let salt = Bytes.fromI32(1234567890);
-    let newCreateMetaMorphoEvent = createCreateMetaMorphoEvent(
-      metaMorpho,
+    let newUrdCreatedEvent = createUrdCreatedEvent(
+      urd,
       caller,
       initialOwner,
       initialTimelock,
-      asset,
-      name,
-      symbol,
+      initialRoot,
+      initialIpfsHash,
       salt
     );
-    handleCreateMetaMorpho(newCreateMetaMorphoEvent);
+    handleUrdCreated(newUrdCreatedEvent);
   });
 
   afterAll(() => {
@@ -54,54 +48,48 @@ describe("Describe entity assertions", () => {
   // For more test scenarios, see:
   // https://thegraph.com/docs/en/developer/matchstick/#write-a-unit-test
 
-  test("CreateMetaMorpho created and stored", () => {
-    assert.entityCount("CreateMetaMorpho", 1);
+  test("UrdCreated created and stored", () => {
+    assert.entityCount("UrdCreated", 1);
 
     // 0xa16081f360e3847006db660bae1c6d1b2e17ec2a is the default address used in newMockEvent() function
     assert.fieldEquals(
-      "CreateMetaMorpho",
+      "UrdCreated",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
-      "metaMorpho",
+      "urd",
       "0x0000000000000000000000000000000000000001"
     );
     assert.fieldEquals(
-      "CreateMetaMorpho",
+      "UrdCreated",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
       "caller",
       "0x0000000000000000000000000000000000000001"
     );
     assert.fieldEquals(
-      "CreateMetaMorpho",
+      "UrdCreated",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
       "initialOwner",
       "0x0000000000000000000000000000000000000001"
     );
     assert.fieldEquals(
-      "CreateMetaMorpho",
+      "UrdCreated",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
       "initialTimelock",
       "234"
     );
     assert.fieldEquals(
-      "CreateMetaMorpho",
+      "UrdCreated",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
-      "asset",
-      "0x0000000000000000000000000000000000000001"
+      "initialRoot",
+      "1234567890"
     );
     assert.fieldEquals(
-      "CreateMetaMorpho",
+      "UrdCreated",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
-      "name",
-      "Example string value"
+      "initialIpfsHash",
+      "1234567890"
     );
     assert.fieldEquals(
-      "CreateMetaMorpho",
-      "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
-      "symbol",
-      "Example string value"
-    );
-    assert.fieldEquals(
-      "CreateMetaMorpho",
+      "UrdCreated",
       "0xa16081f360e3847006db660bae1c6d1b2e17ec2a-1",
       "salt",
       "1234567890"
