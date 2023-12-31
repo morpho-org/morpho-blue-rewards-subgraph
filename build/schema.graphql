@@ -1,68 +1,147 @@
 
-type Market @entity {
+
+enum PositionType {
+  SUPPLY,
+  BORROW,
+  COLLATERAL
+}
+
+type MorphoTx @entity {
+
   id: Bytes!
-  supplyShares: BigInt!
 
-  epochs: [MarketEpoch!]! @derivedFrom(field: "market")
-  lastEpoch: MarketEpoch
-  lastCheckTimestamp: BigInt!
-  rewardsAccrued: BigInt!
-}
+  type: PositionType!
 
-type Epoch @entity {
-  id: String!
-  start: BigInt!
-  end: BigInt!
-  totalDistributed: BigInt!
-  rewardsAccrued: BigInt!
-  previousEpoch: Epoch
-  nextEpoch: Epoch
-}
+  user: User!
 
-type MarketEpoch @entity {
-  id: String!
   market: Market!
-  epoch: Epoch!
-  "36 decimals precision"
-  rate: BigInt!
-  totalRewardsAccrued: BigInt!
-  lastUpdateTimestamp: BigInt!
-  rewardsSupplyIndex: BigInt!
+
+  shares: BigInt!
+
+  timestamp: BigInt!
+
+  # Additionals informations
+  txHash: Bytes!
+  txIndex: BigInt!
+  logIndex: BigInt!
+  blockNumber: BigInt!
+
 }
 
 type User @entity {
+
   id: Bytes!
-  balances: [Balance!]! @derivedFrom(field: "user")
-  rewardsAccrued: BigInt!
+
+  morphoTx: [MorphoTx!]! @derivedFrom(field: "user")
+  positions: [Position!]! @derivedFrom(field: "user")
+
 }
 
-type Balance @entity {
-  id: String!
+type Market @entity {
+
+  id: Bytes!
+
+  totalSupplyShares: BigInt!
+  totalBorrowShares: BigInt!
+  totalCollateral: BigInt!
+
+  lastUpdateTimestamp: Int!
+
+  morphoTx: [MorphoTx!]! @derivedFrom(field: "market")
+  rewardsRates: [RewardsRate!]! @derivedFrom(field: "market")
+  positions: [Position!]! @derivedFrom(field: "market")
+
+}
+
+
+type URD @entity {
+  id: Bytes!
+
+  rewardsRates: [RewardsRate!]! @derivedFrom(field: "urd")
+}
+
+type Position @entity {
+
+  "concat of the user address and the market id"
+  id: Bytes!
+
   user: User!
   market: Market!
   supplyShares: BigInt!
-  rewardsAccrued: BigInt!
-  lastEpochUpdate: Epoch
-  lastUpdateTimestamp: BigInt!
+  borrowShares: BigInt!
+  collateral: BigInt!
+  # TODO : rewards?
+}
+
+type PositionRewards @entity {
+
+  "concat of the position id and the rewards rate id"
+  id: Bytes!
+
+  rewardsRate: RewardsRate!
+  position: Position!
+
+  positionSupplyIndex: BigInt!
+  positionBorrowIndex: BigInt!
+  positionCollateralIndex: BigInt!
+
+  positionSupplyAccrued: BigInt!
+  positionBorrowAccrued: BigInt!
+  positionCollateralAccrued: BigInt!
+
+
 }
 
 
-type MarketEpochUser @entity {
-  id: String!
-  marketEpoch: MarketEpoch!
-  user: User!
-  rewardsSupplyIndex: BigInt!
-  rewardsAccrued: BigInt!
+type RewardsRate @entity {
+
+  "concat of the sender, market id, urd and the rewards token address"
+  id: Bytes!
+  sender: Bytes!
+
+  urd: URD!
+
+  rewardToken: Bytes!
+
+  market: Market!
+
+  supplyRatePerYear: BigInt!
+  borrowRatePerYear: BigInt!
+  collateralRatePerYear: BigInt!
+
+  availableAt: BigInt!
+
+  supplyIndex: BigInt!
+  borrowIndex: BigInt!
+  collateralIndex: BigInt!
+
+  rateUpdates: [RateUpdateTx!]! @derivedFrom(field: "rewardsRate")
 }
 
-type CurrentEpoch @entity {
-  "1"
-  id: String!
-  epoch: Epoch
-}
+type RateUpdateTx @entity {
 
-type _FeeRecipient @entity {
-  "1"
-  id: String!
-  feeReceiver: Bytes!
+  id: Bytes!
+
+  sender: Bytes!
+
+  urd: URD!
+
+  rewardToken: Bytes!
+
+  market: Market!
+
+  supplyRatePerYear: BigInt!
+  borrowRatePerYear: BigInt!
+  collateralRatePerYear: BigInt!
+
+  rewardsRate: RewardsRate!
+
+  timestamp: BigInt!
+
+  # Additionals informations
+  txHash: Bytes!
+  txIndex: BigInt!
+  logIndex: BigInt!
+  blockNumber: BigInt!
+
 }

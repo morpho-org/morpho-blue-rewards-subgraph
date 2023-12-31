@@ -6,7 +6,6 @@ import {
   RootSet as RootSetEvent,
   RootUpdaterSet as RootUpdaterSetEvent,
   TimelockSet as TimelockSetEvent,
-  UrdCreated as UrdCreatedEvent
 } from "../generated/URD/URD"
 
 
@@ -29,7 +28,4 @@ export function handleRootUpdaterSet(event: RootUpdaterSetEvent): void {
 }
 
 export function handleTimelockSet(event: TimelockSetEvent): void {
-}
-
-export function handleUrdCreated(event: UrdCreatedEvent): void {
 }

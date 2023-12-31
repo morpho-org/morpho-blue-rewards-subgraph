@@ -20,6 +20,12 @@ type MorphoTx @entity {
 
   timestamp: BigInt!
 
+  # Additionals informations
+  txHash: Bytes!
+  txIndex: BigInt!
+  logIndex: BigInt!
+  blockNumber: BigInt!
+
 }
 
 type User @entity {
@@ -42,7 +48,6 @@ type Market @entity {
   lastUpdateTimestamp: Int!
 
   morphoTx: [MorphoTx!]! @derivedFrom(field: "market")
-  positions: [Position!]! @derivedFrom(field: "market")
   rewardsRates: [RewardsRate!]! @derivedFrom(field: "market")
   positions: [Position!]! @derivedFrom(field: "market")
 
@@ -90,13 +95,13 @@ type PositionRewards @entity {
 
 type RewardsRate @entity {
 
-  "concat of the market id, urd, availableAt and the rewards token address"
+  "concat of the sender, market id, urd and the rewards token address"
   id: Bytes!
-  caller: Bytes!
+  sender: Bytes!
 
   urd: URD!
 
-  rewardsToken: Bytes!
+  rewardToken: Bytes!
 
   market: Market!
 
@@ -109,4 +114,34 @@ type RewardsRate @entity {
   supplyIndex: BigInt!
   borrowIndex: BigInt!
   collateralIndex: BigInt!
+
+  rateUpdates: [RateUpdateTx!]! @derivedFrom(field: "rewardsRate")
+}
+
+type RateUpdateTx @entity {
+
+  id: Bytes!
+
+  sender: Bytes!
+
+  urd: URD!
+
+  rewardToken: Bytes!
+
+  market: Market!
+
+  supplyRatePerYear: BigInt!
+  borrowRatePerYear: BigInt!
+  collateralRatePerYear: BigInt!
+
+  rewardsRate: RewardsRate!
+
+  timestamp: BigInt!
+
+  # Additionals informations
+  txHash: Bytes!
+  txIndex: BigInt!
+  logIndex: BigInt!
+  blockNumber: BigInt!
+
 }
