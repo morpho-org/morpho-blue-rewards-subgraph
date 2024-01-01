@@ -8,8 +8,7 @@ import {
   UserRewardProgramAccrual,
 } from "../generated/schema";
 
-import { ONE_YEAR, WAD } from "./constants";
-import { INITIAL_INDEX } from "./handlers/emission-data-provider";
+import { INITIAL_INDEX, ONE_YEAR, WAD } from "./constants";
 import { getMarket, setupPosition } from "./initializers";
 import { PositionType } from "./utils";
 

@@ -1,25 +1,34 @@
-import { Address, Bytes } from "@graphprotocol/graph-ts";
+import { Address, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
   AccrueFee as AccrueFeeEvent,
   Deposit as DepositEvent,
   Transfer as TransferEvent,
   Withdraw as WithdrawEvent,
+  SetFeeRecipient as SetFeeRecipientEvent,
 } from "../../generated/MetaMorpho/MetaMorpho";
 import { MetaMorphoTx } from "../../generated/schema";
 import { distributeMetaMorphoRewards } from "../distribute-metamorpho-rewards";
-import { setupMetaMorpho } from "../initializers";
+import { setupMetaMorpho, setupUser } from "../initializers";
 import { generateLogId } from "../utils";
 
 export function handleAccrueFee(event: AccrueFeeEvent): void {
   if (event.params.feeShares.isZero()) return;
 
+  const mm = setupMetaMorpho(event.address);
+
+  if (mm.feeRecipient === null) {
+    log.critical("Fee recipient not set for MetaMorpho {}", [
+      mm.id.toHexString(),
+    ]);
+    return;
+  }
+
   const id = generateLogId(event);
 
   const mmTx = new MetaMorphoTx(id);
-  mmTx.metaMorpho = setupMetaMorpho(event.address).id;
-  // TODO: retrieve the fee receiver.
-  mmTx.user = setupMetaMorpho(Address.zero()).id;
+  mmTx.metaMorpho = mm.id;
+  mmTx.user = mm.feeRecipient!;
   mmTx.shares = event.params.feeShares;
   mmTx.timestamp = event.block.timestamp;
 
@@ -110,4 +119,10 @@ export function handleWithdraw(event: WithdrawEvent): void {
   mmTx.save();
 
   distributeMetaMorphoRewards(mmTx);
+}
+
+export function handleSetFeeRecipient(event: SetFeeRecipientEvent): void {
+  const mm = setupMetaMorpho(event.address);
+  mm.feeRecipient = setupUser(event.params.newFeeRecipient).id;
+  mm.save();
 }

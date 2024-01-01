@@ -1,4 +1,4 @@
-import { BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { Bytes } from "@graphprotocol/graph-ts";
 
 import { RewardsEmissionSet as RewardsEmissionSetEvent } from "../../generated/EmissionDataProvider/EmissionDataProvider";
 import {
@@ -6,10 +6,9 @@ import {
   RewardProgram,
   RewardsRate,
 } from "../../generated/schema";
+import { INITIAL_INDEX } from "../constants";
 import { updateRewardsRate } from "../distribute-rewards";
 import { setupMarket, setupURD, setupUser } from "../initializers";
-
-export const INITIAL_INDEX = BigInt.fromI32(1e18 as i32);
 
 export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
   const rewardProgramId = event.params.sender

@@ -1,4 +1,4 @@
-import { Address, Bytes } from "@graphprotocol/graph-ts";
+import { Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
   AccrueInterest as AccrueInterestEvent,
@@ -10,8 +10,9 @@ import {
   SupplyCollateral as SupplyCollateralEvent,
   Withdraw as WithdrawEvent,
   WithdrawCollateral as WithdrawCollateralEvent,
+  SetFeeRecipient as SetFeeRecipientEvent,
 } from "../../generated/Morpho/Morpho";
-import { MorphoTx } from "../../generated/schema";
+import { MorphoFeeRecipient, MorphoTx } from "../../generated/schema";
 import { handleMorphoTx } from "../distribute-rewards";
 import { setupMarket, setupUser } from "../initializers";
 import { generateLogId, PositionType } from "../utils";
@@ -19,12 +20,17 @@ import { generateLogId, PositionType } from "../utils";
 export function handleAccrueInterest(event: AccrueInterestEvent): void {
   if (event.params.feeShares.isZero()) return;
 
+  const feeRecipient = MorphoFeeRecipient.load(Bytes.empty());
+  if (!feeRecipient) {
+    log.critical("Morpho not found", []);
+    return;
+  }
+
   // We consider the fees accrued as a supply.
   const id = generateLogId(event);
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.SUPPLY;
-  // TODO: retrieve the fee receiver.
-  morphoTx.user = setupUser(Address.zero()).id;
+  morphoTx.user = feeRecipient.feeRecipient;
   morphoTx.market = setupMarket(event.params.id).id;
   morphoTx.shares = event.params.feeShares;
 
@@ -204,4 +210,13 @@ export function handleWithdrawCollateral(event: WithdrawCollateralEvent): void {
   morphoTx.save();
 
   handleMorphoTx(morphoTx);
+}
+
+export function handleSetFeeRecipient(event: SetFeeRecipientEvent): void {
+  let morpho = MorphoFeeRecipient.load(Bytes.empty());
+  if (!morpho) {
+    morpho = new MorphoFeeRecipient(Bytes.empty());
+  }
+  morpho.feeRecipient = setupUser(event.params.newFeeRecipient).id;
+  morpho.save();
 }

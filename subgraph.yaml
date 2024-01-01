@@ -56,6 +56,8 @@ dataSources:
           handler: handleWithdraw
         - event: WithdrawCollateral(indexed bytes32,address,indexed address,indexed address,uint256)
           handler: handleWithdrawCollateral
+        - event: SetFeeRecipient(indexed address)
+          handler: handleSetFeeRecipient
       file: ./src/handlers/morpho.ts
   - kind: ethereum
     name: MetaMorphoFactory
@@ -172,6 +174,7 @@ templates:
         - Deposit
         - Transfer
         - Withdraw
+        - SetFeeRecipient
       abis:
         - name: MetaMorpho
           file: ./abis/MetaMorpho.json
@@ -184,4 +187,6 @@ templates:
           handler: handleTransfer
         - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
           handler: handleWithdraw
+        - event: SetFeeRecipient(indexed address)
+          handler: handleSetFeeRecipient
       file: ./src/handlers/meta-morpho.ts

@@ -9,9 +9,8 @@ import {
   UserRewardProgramAccrual,
 } from "../generated/schema";
 
-import { WAD } from "./constants";
+import { INITIAL_INDEX, WAD } from "./constants";
 import { distributeRewards } from "./distribute-rewards";
-import { INITIAL_INDEX } from "./handlers/emission-data-provider";
 import {
   setupMetaMorpho,
   setupMetaMorphoPosition,

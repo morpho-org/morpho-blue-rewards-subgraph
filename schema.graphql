@@ -3,6 +3,11 @@ enum PositionType {
   BORROW
   COLLATERAL
 }
+type MorphoFeeRecipient @entity {
+    "Empty bytes"
+    id: Bytes!
+    feeRecipient: User!
+}
 
 type MorphoTx @entity {
   id: Bytes!
@@ -155,6 +160,8 @@ type MetaMorpho @entity {
     id: Bytes!
 
     totalShares: BigInt!
+
+    feeRecipient: User
 
     morphoTx: [MetaMorphoTx!]! @derivedFrom(field: "metaMorpho")
 
