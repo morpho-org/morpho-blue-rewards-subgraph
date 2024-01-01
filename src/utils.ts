@@ -1,4 +1,4 @@
-import { Bytes, crypto, ethereum } from "@graphprotocol/graph-ts";
+import { Bytes, crypto, ethereum, log } from "@graphprotocol/graph-ts";
 
 export namespace PositionType {
   export const SUPPLY = "SUPPLY";
@@ -13,9 +13,14 @@ export function hashBytes(bytes: Bytes): Bytes {
 }
 
 export function generateLogId(event: ethereum.Event): Bytes {
-  return hashBytes(
-    event.transaction.hash.concat(
-      Bytes.fromHexString(event.logIndex.toHexString())
-    )
-  );
+  // Pad to 32 bytes the log index
+  const value = ethereum.Value.fromSignedBigInt(event.logIndex);
+
+  const logIndex = ethereum.encode(value);
+  if (!logIndex) {
+    log.critical("Log index is null", []);
+    return Bytes.fromUTF8("");
+  }
+
+  return hashBytes(event.transaction.hash.concat(logIndex));
 }
