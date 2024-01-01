@@ -2,13 +2,12 @@ import { Address, BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
   Market,
+  MetaMorpho,
   MetaMorphoPosition,
   Position,
   URD,
   User,
 } from "../generated/schema";
-
-import { setupMetaMorpho } from "./handlers/meta-morpho";
 
 export function getMarket(marketId: Bytes): Market {
   let market = Market.load(marketId);
@@ -68,6 +67,16 @@ export function setupURD(address: Address): URD {
     urd.save();
   }
   return urd;
+}
+
+export function setupMetaMorpho(address: Bytes): MetaMorpho {
+  let metaMorpho = MetaMorpho.load(address);
+  if (!metaMorpho) {
+    metaMorpho = new MetaMorpho(address);
+    metaMorpho.totalShares = BigInt.zero();
+    metaMorpho.save();
+  }
+  return metaMorpho;
 }
 
 export function setupMetaMorphoPosition(

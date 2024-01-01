@@ -1,4 +1,4 @@
-import { Address, BigInt, Bytes } from "@graphprotocol/graph-ts";
+import { Address, Bytes } from "@graphprotocol/graph-ts";
 
 import {
   AccrueFee as AccrueFeeEvent,
@@ -6,19 +6,10 @@ import {
   Transfer as TransferEvent,
   Withdraw as WithdrawEvent,
 } from "../../generated/MetaMorpho/MetaMorpho";
-import { MetaMorpho, MetaMorphoTx } from "../../generated/schema";
+import { MetaMorphoTx } from "../../generated/schema";
 import { distributeMetaMorphoRewards } from "../distribute-metamorpho-rewards";
+import { setupMetaMorpho } from "../initializers";
 import { generateLogId } from "../utils";
-
-export function setupMetaMorpho(address: Bytes): MetaMorpho {
-  let metaMorpho = MetaMorpho.load(address);
-  if (!metaMorpho) {
-    metaMorpho = new MetaMorpho(address);
-    metaMorpho.totalShares = BigInt.zero();
-    metaMorpho.save();
-  }
-  return metaMorpho;
-}
 
 export function handleAccrueFee(event: AccrueFeeEvent): void {
   if (event.params.feeShares.isZero()) return;

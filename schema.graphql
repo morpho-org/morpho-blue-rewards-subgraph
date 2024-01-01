@@ -127,7 +127,7 @@ type RewardsRate @entity {
 type RateUpdateTx @entity {
   id: Bytes!
 
-  sender: Bytes!
+  sender: User!
 
   urd: URD!
 

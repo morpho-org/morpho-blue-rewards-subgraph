@@ -12,8 +12,11 @@ import {
 import { WAD } from "./constants";
 import { distributeRewards } from "./distribute-rewards";
 import { INITIAL_INDEX } from "./handlers/emission-data-provider";
-import { setupMetaMorpho } from "./handlers/meta-morpho";
-import { setupMetaMorphoPosition, setupUser } from "./initializers";
+import {
+  setupMetaMorpho,
+  setupMetaMorphoPosition,
+  setupUser,
+} from "./initializers";
 
 function accrueMetaMorphoRewardsForOneProgram(
   metaMorpho: MetaMorpho,

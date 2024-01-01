@@ -7,7 +7,7 @@ import {
   RewardsRate,
 } from "../../generated/schema";
 import { updateRewardsRate } from "../distribute-rewards";
-import { setupMarket, setupURD } from "../initializers";
+import { setupMarket, setupURD, setupUser } from "../initializers";
 
 export const INITIAL_INDEX = BigInt.fromI32(1e18 as i32);
 
@@ -19,7 +19,7 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
   let rewardProgram = RewardProgram.load(rewardProgramId);
   if (!rewardProgram) {
     rewardProgram = new RewardProgram(rewardProgramId);
-    rewardProgram.sender = event.params.sender;
+    rewardProgram.sender = setupUser(event.params.sender).id;
     rewardProgram.rewardToken = event.params.rewardToken;
     rewardProgram.urd = setupURD(event.params.urd).id;
     rewardProgram.save();
@@ -57,6 +57,7 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
       Bytes.fromHexString(event.logIndex.toHexString())
     )
   );
+  // entities already set
   rateUpdateTx.sender = event.params.sender;
   rateUpdateTx.urd = event.params.urd;
   rateUpdateTx.rewardToken = event.params.rewardToken;
