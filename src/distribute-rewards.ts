@@ -10,7 +10,7 @@ import {
 
 import { INITIAL_INDEX, ONE_YEAR, WAD } from "./constants";
 import { getMarket, setupPosition } from "./initializers";
-import { PositionType } from "./utils";
+import { hashBytes, PositionType } from "./utils";
 
 export function handleMorphoTx(morphoTx: MorphoTx): void {
   distributeRewards(morphoTx.market, morphoTx.user, morphoTx.timestamp);
@@ -65,7 +65,9 @@ export function distributeRewards(
         position.id
       );
       // Then accrue the rewards for the user accrual program
-      let userAccrualId = position.user.concat(updatedRewards.rewardProgram);
+      let userAccrualId = hashBytes(
+        position.user.concat(updatedRewards.rewardProgram)
+      );
       let userAccrualProgram = UserRewardProgramAccrual.load(userAccrualId);
       if (!userAccrualProgram) {
         userAccrualProgram = new UserRewardProgramAccrual(userAccrualId);
@@ -75,6 +77,7 @@ export function distributeRewards(
         userAccrualProgram.borrowRewardsAccrued = BigInt.zero();
         userAccrualProgram.collateralRewardsAccrued = BigInt.zero();
       }
+
       if (initialPositionRewards) {
         userAccrualProgram.supplyRewardsAccrued =
           userAccrualProgram.supplyRewardsAccrued.plus(
@@ -82,12 +85,14 @@ export function distributeRewards(
               initialPositionRewards.positionSupplyAccrued
             )
           );
+
         userAccrualProgram.borrowRewardsAccrued =
           userAccrualProgram.borrowRewardsAccrued.plus(
             updatedPosition.positionBorrowAccrued.minus(
               initialPositionRewards.positionBorrowAccrued
             )
           );
+
         userAccrualProgram.collateralRewardsAccrued =
           userAccrualProgram.collateralRewardsAccrued.plus(
             updatedPosition.positionCollateralAccrued.minus(
@@ -99,6 +104,7 @@ export function distributeRewards(
           userAccrualProgram.supplyRewardsAccrued.plus(
             updatedPosition.positionSupplyAccrued
           );
+
         userAccrualProgram.borrowRewardsAccrued =
           userAccrualProgram.borrowRewardsAccrued.plus(
             updatedPosition.positionBorrowAccrued
@@ -108,6 +114,7 @@ export function distributeRewards(
             updatedPosition.positionCollateralAccrued
           );
       }
+
       userAccrualProgram.save();
       updatedPosition.save();
     }
@@ -179,7 +186,7 @@ export function accruePositionRewardsForOneRate(
   }
   // We first update the indexes
 
-  const positionRewardsId = position.id.concat(rewardsRate.id);
+  const positionRewardsId = hashBytes(position.id.concat(rewardsRate.id));
   let positionRewards = PositionRewards.load(positionRewardsId);
 
   if (!positionRewards) {

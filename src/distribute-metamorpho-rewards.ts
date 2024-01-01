@@ -16,14 +16,16 @@ import {
   setupMetaMorphoPosition,
   setupUser,
 } from "./initializers";
+import { hashBytes } from "./utils";
 
 function accrueMetaMorphoRewardsForOneProgram(
   metaMorpho: MetaMorpho,
   metaMorphoRewardsAccrual: UserRewardProgramAccrual
 ): MetaMorphoRewards {
-  const metaMorphoRewardsId = metaMorphoRewardsAccrual.rewardProgram.concat(
-    metaMorpho.id
+  const metaMorphoRewardsId = hashBytes(
+    metaMorphoRewardsAccrual.rewardProgram.concat(metaMorpho.id)
   );
+
   let metaMorphoRewards = MetaMorphoRewards.load(metaMorphoRewardsId);
   if (!metaMorphoRewards) {
     metaMorphoRewards = new MetaMorphoRewards(metaMorphoRewardsId);
@@ -47,7 +49,7 @@ function accrueMetaMorphoPositionRewardsForOneProgram(
   mmRewards: MetaMorphoRewards,
   mmPosition: MetaMorphoPosition
 ): MetaMorphoPositionRewards {
-  const mmPositionRewardsId = mmPosition.id.concat(mmRewards.id);
+  const mmPositionRewardsId = hashBytes(mmPosition.id.concat(mmRewards.id));
   let mmPositionRewards = MetaMorphoPositionRewards.load(mmPositionRewardsId);
 
   if (!mmPositionRewards) {

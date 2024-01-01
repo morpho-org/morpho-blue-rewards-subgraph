@@ -1,5 +1,3 @@
-import { Bytes } from "@graphprotocol/graph-ts";
-
 import { RewardsEmissionSet as RewardsEmissionSetEvent } from "../../generated/EmissionDataProvider/EmissionDataProvider";
 import {
   RateUpdateTx,
@@ -9,11 +7,14 @@ import {
 import { INITIAL_INDEX } from "../constants";
 import { updateRewardsRate } from "../distribute-rewards";
 import { setupMarket, setupURD, setupUser } from "../initializers";
+import { generateLogId, hashBytes } from "../utils";
 
 export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
-  const rewardProgramId = event.params.sender
-    .concat(event.params.rewardToken)
-    .concat(event.params.urd);
+  const rewardProgramId = hashBytes(
+    event.params.sender
+      .concat(event.params.rewardToken)
+      .concat(event.params.urd)
+  );
 
   let rewardProgram = RewardProgram.load(rewardProgramId);
   if (!rewardProgram) {
@@ -24,7 +25,7 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
     rewardProgram.save();
   }
 
-  const id = rewardProgram.id.concat(event.params.market);
+  const id = hashBytes(rewardProgram.id.concat(event.params.market));
   let rewardsRate = RewardsRate.load(id);
 
   if (!rewardsRate) {
@@ -51,11 +52,7 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
 
   rewardsRate.save();
 
-  const rateUpdateTx = new RateUpdateTx(
-    event.transaction.hash.concat(
-      Bytes.fromHexString(event.logIndex.toHexString())
-    )
-  );
+  const rateUpdateTx = new RateUpdateTx(generateLogId(event));
   // entities already set
   rateUpdateTx.sender = event.params.sender;
   rateUpdateTx.urd = event.params.urd;

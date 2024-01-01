@@ -3,6 +3,7 @@ enum PositionType {
   BORROW
   COLLATERAL
 }
+
 type MorphoFeeRecipient @entity {
     "Empty bytes"
     id: Bytes!

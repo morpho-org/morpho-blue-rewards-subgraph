@@ -9,6 +9,8 @@ import {
   User,
 } from "../generated/schema";
 
+import { hashBytes } from "./utils";
+
 export function getMarket(marketId: Bytes): Market {
   let market = Market.load(marketId);
   if (!market) {
@@ -29,7 +31,6 @@ export function setupUser(address: Bytes): User {
 }
 
 export function setupMarket(marketId: Bytes): Market {
-  // TODO: what if a rewards program was initialized before market creation?
   let market = Market.load(marketId);
   if (!market) {
     market = new Market(marketId);
@@ -44,7 +45,7 @@ export function setupMarket(marketId: Bytes): Market {
 }
 
 export function setupPosition(marketId: Bytes, userAddress: Bytes): Position {
-  const positionId = userAddress.concat(marketId);
+  const positionId = hashBytes(marketId.concat(userAddress));
   let position = Position.load(positionId);
 
   if (!position) {
@@ -83,7 +84,7 @@ export function setupMetaMorphoPosition(
   userAddress: Bytes,
   metaMorphoAddress: Bytes
 ): MetaMorphoPosition {
-  const mmPositionId = userAddress.concat(metaMorphoAddress);
+  const mmPositionId = hashBytes(userAddress.concat(metaMorphoAddress));
   let metaMorphoPosition = MetaMorphoPosition.load(mmPositionId);
   if (!metaMorphoPosition) {
     metaMorphoPosition = new MetaMorphoPosition(mmPositionId);
