@@ -33,10 +33,16 @@ type MorphoTx @entity {
 type User @entity {
   id: Bytes!
 
-  morphoTx: [MorphoTx!]! @derivedFrom(field: "user")
+  morphoTxs: [MorphoTx!]! @derivedFrom(field: "user")
+  rateUpdateTxs: [RateUpdateTx!]! @derivedFrom(field: "sender")
   positions: [Position!]! @derivedFrom(field: "user")
   ownedRewardPrograms: [RewardProgram!]! @derivedFrom(field: "sender")
   rewardProgramAccruals: [UserRewardProgramAccrual!]! @derivedFrom(field: "user")
+  rewardProgramsOwned: [RewardProgram!]! @derivedFrom(field: "sender")
+
+  metaMorphoFeeRecipients: [MorphoFeeRecipient!]! @derivedFrom(field: "feeRecipient")
+  metaMorphoPositions: [MetaMorphoPosition!]! @derivedFrom(field: "user")
+    metaMorphoTxs: [MetaMorphoTx!]! @derivedFrom(field: "user")
 }
 
 type Market @entity {
@@ -46,7 +52,7 @@ type Market @entity {
   totalBorrowShares: BigInt!
   totalCollateral: BigInt!
 
-  morphoTx: [MorphoTx!]! @derivedFrom(field: "market")
+  morphoTxs: [MorphoTx!]! @derivedFrom(field: "market")
   rewardsRates: [RewardsRate!]! @derivedFrom(field: "market")
   positions: [Position!]! @derivedFrom(field: "market")
 }
@@ -94,6 +100,9 @@ type RewardProgram @entity {
     rewardToken: Bytes!
 
     rates: [RewardsRate!]! @derivedFrom(field: "rewardProgram")
+    rateUpdates: [RateUpdateTx!]! @derivedFrom(field: "rewardProgram")
+    userRewardProgramAccruals: [UserRewardProgramAccrual!]! @derivedFrom(field: "rewardProgram")
+    metaMorphoRewards: [MetaMorphoRewards!]! @derivedFrom(field: "program")
 }
 
 type UserRewardProgramAccrual @entity {
@@ -128,6 +137,8 @@ type RewardsRate @entity {
   lastUpdateTimestamp: BigInt!
 
   rateUpdates: [RateUpdateTx!]! @derivedFrom(field: "rewardsRate")
+  positionsRewards: [PositionRewards!]! @derivedFrom(field: "rewardsRate")
+
 }
 
 type RateUpdateTx @entity {
@@ -145,6 +156,7 @@ type RateUpdateTx @entity {
   borrowRatePerYear: BigInt!
   collateralRatePerYear: BigInt!
 
+  rewardProgram: RewardProgram!
   rewardsRate: RewardsRate!
 
   timestamp: BigInt!
@@ -164,18 +176,22 @@ type MetaMorpho @entity {
 
     feeRecipient: User
 
-    morphoTx: [MetaMorphoTx!]! @derivedFrom(field: "metaMorpho")
+    metaMorphoTxs: [MetaMorphoTx!]! @derivedFrom(field: "metaMorpho")
+    positions: [MetaMorphoPosition!]! @derivedFrom(field: "metaMorpho")
+    rewards: [MetaMorphoRewards!]! @derivedFrom(field: "metaMorpho")
 
 }
 
 type MetaMorphoPosition @entity {
-      id: Bytes!
+  id: Bytes!
 
-      metaMorpho: MetaMorpho!
+  metaMorpho: MetaMorpho!
 
-      user: User!
+  user: User!
 
-      shares: BigInt!
+  shares: BigInt!
+
+  rewards: [MetaMorphoPositionRewards!]! @derivedFrom(field: "position")
 
 }
 
@@ -189,6 +205,8 @@ type MetaMorphoRewards @entity {
 
     lastIndex: BigInt!
     accrued: BigInt!
+
+    positionsRewards: [MetaMorphoPositionRewards!]! @derivedFrom(field: "metaMorphoRewards")
 }
 
 type MetaMorphoPositionRewards @entity {
