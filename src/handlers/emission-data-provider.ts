@@ -58,6 +58,7 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
   rateUpdateTx.urd = event.params.urd;
   rateUpdateTx.rewardToken = event.params.rewardToken;
   rateUpdateTx.rewardProgram = rewardProgram.id;
+  rateUpdateTx.rewardsRate = rewardsRate.id;
   rateUpdateTx.market = event.params.market;
   rateUpdateTx.supplyRatePerYear =
     event.params.rewardsEmission.supplyRatePerYear;
