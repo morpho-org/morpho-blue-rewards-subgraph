@@ -38,10 +38,12 @@ function accrueMetaMorphoRewardsForOneProgram(
     metaMorphoRewardsAccrual.supplyRewardsAccrued.minus(
       metaMorphoRewards.accrued
     );
-  metaMorphoRewards.lastIndex = metaMorphoRewards.lastIndex.plus(
-    accruedSinceLastTx.times(WAD).div(metaMorpho.totalShares)
-  );
-  metaMorphoRewards.accrued = metaMorphoRewardsAccrual.supplyRewardsAccrued;
+  if (!metaMorpho.totalShares.isZero()) {
+    metaMorphoRewards.lastIndex = metaMorphoRewards.lastIndex.plus(
+      accruedSinceLastTx.times(WAD).div(metaMorpho.totalShares)
+    );
+    metaMorphoRewards.accrued = metaMorphoRewardsAccrual.supplyRewardsAccrued;
+  }
   return metaMorphoRewards;
 }
 
