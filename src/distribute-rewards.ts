@@ -1,6 +1,7 @@
 import { BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
+  MetaMorpho,
   MorphoTx,
   Position,
   PositionRewards,
@@ -8,9 +9,22 @@ import {
   UserRewardProgramAccrual,
 } from "../generated/schema";
 
-import { INITIAL_INDEX, ONE_YEAR, WAD } from "./constants";
+import { ONE_YEAR } from "./constants";
 import { getMarket, setupPosition } from "./initializers";
 import { hashBytes, PositionType } from "./utils";
+
+// we use the same offset as the one used in Morpho, to reuse the same shares.
+const VIRTUAL_SHARES = BigInt.fromString("10").pow(6 as u8);
+const VIRTUAL_ASSETS = BigInt.fromString("1");
+function toRewardsAssets(
+  shares: BigInt,
+  totalRewardsAssets: BigInt,
+  totalShares: BigInt
+): BigInt {
+  return shares
+    .times(totalRewardsAssets.plus(VIRTUAL_ASSETS))
+    .div(totalShares.plus(VIRTUAL_SHARES));
+}
 
 export function handleMorphoTx(morphoTx: MorphoTx): void {
   distributeRewards(morphoTx.market, morphoTx.user, morphoTx.timestamp);
@@ -49,79 +63,23 @@ export function distributeRewards(
 
   const marketRewardsProgram = market.rewardsRates.load();
   for (let i = 0; i < marketRewardsProgram.length; i++) {
-    const updatedRewards = updateRewardsRate(
+    const updatedRewards = updateTotalDistributed(
       marketRewardsProgram[i],
       timestamp
     );
     updatedRewards.save();
 
     if (position) {
-      const initialPositionRewards = PositionRewards.load(
-        position.id.concat(updatedRewards.id)
-      );
-
-      const updatedPosition = accruePositionRewardsForOneRate(
-        updatedRewards,
-        position.id
-      );
-      // Then accrue the rewards for the user accrual program
-      let userAccrualId = hashBytes(
-        position.user.concat(updatedRewards.rewardProgram)
-      );
-      let userAccrualProgram = UserRewardProgramAccrual.load(userAccrualId);
-      if (!userAccrualProgram) {
-        userAccrualProgram = new UserRewardProgramAccrual(userAccrualId);
-        userAccrualProgram.user = position.user;
-        userAccrualProgram.rewardProgram = updatedRewards.rewardProgram;
-        userAccrualProgram.supplyRewardsAccrued = BigInt.zero();
-        userAccrualProgram.borrowRewardsAccrued = BigInt.zero();
-        userAccrualProgram.collateralRewardsAccrued = BigInt.zero();
-      }
-
-      if (initialPositionRewards) {
-        userAccrualProgram.supplyRewardsAccrued =
-          userAccrualProgram.supplyRewardsAccrued.plus(
-            updatedPosition.positionSupplyAccrued.minus(
-              initialPositionRewards.positionSupplyAccrued
-            )
-          );
-
-        userAccrualProgram.borrowRewardsAccrued =
-          userAccrualProgram.borrowRewardsAccrued.plus(
-            updatedPosition.positionBorrowAccrued.minus(
-              initialPositionRewards.positionBorrowAccrued
-            )
-          );
-
-        userAccrualProgram.collateralRewardsAccrued =
-          userAccrualProgram.collateralRewardsAccrued.plus(
-            updatedPosition.positionCollateralAccrued.minus(
-              initialPositionRewards.positionCollateralAccrued
-            )
-          );
-      } else {
-        userAccrualProgram.supplyRewardsAccrued =
-          userAccrualProgram.supplyRewardsAccrued.plus(
-            updatedPosition.positionSupplyAccrued
-          );
-
-        userAccrualProgram.borrowRewardsAccrued =
-          userAccrualProgram.borrowRewardsAccrued.plus(
-            updatedPosition.positionBorrowAccrued
-          );
-        userAccrualProgram.collateralRewardsAccrued =
-          userAccrualProgram.collateralRewardsAccrued.plus(
-            updatedPosition.positionCollateralAccrued
-          );
-      }
-
-      userAccrualProgram.save();
-      updatedPosition.save();
+      accruePositionRewardsForOneRate(updatedRewards, position.id);
     }
   }
 }
 
-export function updateRewardsRate(
+/**
+ * It accrues the rewards distributed for one given rewards rate of a market & program
+ * It is editing the rewardsRate entity and it saves it at the end.
+ */
+export function updateTotalDistributed(
   rewardsRate: RewardsRate,
   timestamp: BigInt
 ): RewardsRate {
@@ -134,44 +92,27 @@ export function updateRewardsRate(
     return rewardsRate;
   }
 
-  const market = getMarket(rewardsRate.market);
+  const supplyAccrued = rewardsRate.supplyRatePerYear
+    .times(timeDelta)
+    .div(ONE_YEAR);
+  rewardsRate.lastTotalSupplyRewards =
+    rewardsRate.lastTotalSupplyRewards.plus(supplyAccrued);
 
-  if (
-    !market.totalSupplyShares.isZero() &&
-    !rewardsRate.supplyRatePerYear.isZero()
-  ) {
-    const supplyAccrued = rewardsRate.supplyRatePerYear
-      .times(timeDelta)
-      .times(WAD)
-      .div(ONE_YEAR.times(market.totalSupplyShares));
-    rewardsRate.supplyIndex = rewardsRate.supplyIndex.plus(supplyAccrued);
-  }
+  const borrowAccrued = rewardsRate.borrowRatePerYear
+    .times(timeDelta)
+    .div(ONE_YEAR);
+  rewardsRate.lastTotalBorrowRewards =
+    rewardsRate.lastTotalBorrowRewards.plus(borrowAccrued);
 
-  if (
-    !market.totalBorrowShares.isZero() &&
-    !rewardsRate.borrowRatePerYear.isZero()
-  ) {
-    const borrowAccrued = rewardsRate.borrowRatePerYear
-      .times(timeDelta)
-      .times(WAD)
-      .div(ONE_YEAR.times(market.totalBorrowShares));
-    rewardsRate.borrowIndex = rewardsRate.borrowIndex.plus(borrowAccrued);
-  }
-
-  if (
-    market.totalCollateral.isZero() ||
-    rewardsRate.collateralRatePerYear.isZero()
-  ) {
-    const collateralAccrued = rewardsRate.collateralRatePerYear
-      .times(timeDelta)
-      .times(WAD)
-      .div(ONE_YEAR.times(market.totalCollateral));
-    rewardsRate.collateralIndex =
-      rewardsRate.collateralIndex.plus(collateralAccrued);
-  }
+  const collateralAccrued = rewardsRate.collateralRatePerYear
+    .times(timeDelta)
+    .div(ONE_YEAR);
+  rewardsRate.lastTotalCollateralRewards =
+    rewardsRate.lastTotalCollateralRewards.plus(collateralAccrued);
 
   rewardsRate.lastUpdateTimestamp = timestamp;
 
+  rewardsRate.save();
   return rewardsRate;
 }
 
@@ -184,8 +125,7 @@ export function accruePositionRewardsForOneRate(
     log.critical("Position {} not found", [positionId.toHexString()]);
     return new PositionRewards(Bytes.empty());
   }
-  // We first update the indexes
-
+  const market = getMarket(position.market);
   const positionRewardsId = hashBytes(position.id.concat(rewardsRate.id));
   let positionRewards = PositionRewards.load(positionRewardsId);
 
@@ -193,44 +133,72 @@ export function accruePositionRewardsForOneRate(
     positionRewards = new PositionRewards(positionRewardsId);
     positionRewards.rewardsRate = rewardsRate.id;
     positionRewards.position = position.id;
-    positionRewards.positionSupplyIndex = INITIAL_INDEX;
-    positionRewards.positionBorrowIndex = INITIAL_INDEX;
-    positionRewards.positionCollateralIndex = INITIAL_INDEX;
     positionRewards.positionSupplyAccrued = BigInt.zero();
     positionRewards.positionBorrowAccrued = BigInt.zero();
     positionRewards.positionCollateralAccrued = BigInt.zero();
   }
 
+  const totalSupplyRewards = toRewardsAssets(
+    position.supplyShares,
+    rewardsRate.lastTotalSupplyRewards,
+    market.totalSupplyShares
+  );
   positionRewards.positionSupplyAccrued =
-    positionRewards.positionSupplyAccrued.plus(
-      position.supplyShares
-        .times(
-          rewardsRate.supplyIndex.minus(positionRewards.positionSupplyIndex)
-        )
-        .div(WAD)
-    );
-  positionRewards.positionBorrowAccrued =
-    positionRewards.positionBorrowAccrued.plus(
-      position.borrowShares
-        .times(
-          rewardsRate.borrowIndex.minus(positionRewards.positionBorrowIndex)
-        )
-        .div(WAD)
-    );
-  positionRewards.positionCollateralAccrued =
-    positionRewards.positionCollateralAccrued.plus(
-      position.collateral
-        .times(
-          rewardsRate.collateralIndex.minus(
-            positionRewards.positionCollateralIndex
-          )
-        )
-        .div(WAD)
-    );
+    positionRewards.positionSupplyAccrued.plus(totalSupplyRewards);
+  rewardsRate.lastTotalSupplyRewards =
+    rewardsRate.lastTotalSupplyRewards.minus(totalSupplyRewards);
 
-  positionRewards.positionSupplyIndex = rewardsRate.supplyIndex;
-  positionRewards.positionBorrowIndex = rewardsRate.borrowIndex;
-  positionRewards.positionCollateralIndex = rewardsRate.collateralIndex;
+  const totalBorrowRewards = toRewardsAssets(
+    position.borrowShares,
+    rewardsRate.lastTotalBorrowRewards,
+    market.totalBorrowShares
+  );
+  positionRewards.positionBorrowAccrued =
+    positionRewards.positionBorrowAccrued.plus(totalBorrowRewards);
+  rewardsRate.lastTotalBorrowRewards =
+    rewardsRate.lastTotalBorrowRewards.minus(totalBorrowRewards);
+
+  const totalCollateralRewards = toRewardsAssets(
+    position.collateral,
+    rewardsRate.lastTotalCollateralRewards,
+    market.totalCollateral
+  );
+  positionRewards.positionCollateralAccrued =
+    positionRewards.positionCollateralAccrued.plus(totalCollateralRewards);
+  rewardsRate.lastTotalCollateralRewards =
+    rewardsRate.lastTotalCollateralRewards.minus(totalCollateralRewards);
+
+  rewardsRate.save();
+
+  // Then accrue the rewards for the user accrual program
+  let userAccrualId = hashBytes(
+    position.user.concat(rewardsRate.rewardProgram)
+  );
+  let userAccrualProgram = UserRewardProgramAccrual.load(userAccrualId);
+  if (!userAccrualProgram) {
+    userAccrualProgram = new UserRewardProgramAccrual(userAccrualId);
+    userAccrualProgram.user = position.user;
+    userAccrualProgram.rewardProgram = rewardsRate.rewardProgram;
+    userAccrualProgram.supplyRewardsAccrued = BigInt.zero();
+    userAccrualProgram.borrowRewardsAccrued = BigInt.zero();
+    userAccrualProgram.collateralRewardsAccrued = BigInt.zero();
+
+    // check if the user is a metamorpho
+    const metamorpho = MetaMorpho.load(position.user);
+    if (metamorpho !== null) {
+      userAccrualProgram.metamorpho = metamorpho.id;
+    }
+  }
+
+  userAccrualProgram.supplyRewardsAccrued =
+    userAccrualProgram.supplyRewardsAccrued.plus(totalSupplyRewards);
+  userAccrualProgram.borrowRewardsAccrued =
+    userAccrualProgram.borrowRewardsAccrued.plus(totalBorrowRewards);
+  userAccrualProgram.collateralRewardsAccrued =
+    userAccrualProgram.collateralRewardsAccrued.plus(totalCollateralRewards);
+
+  userAccrualProgram.save();
+  positionRewards.save();
 
   return positionRewards;
 }

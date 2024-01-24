@@ -1,11 +1,12 @@
+import { BigInt } from "@graphprotocol/graph-ts";
+
 import { RewardsEmissionSet as RewardsEmissionSetEvent } from "../../generated/EmissionDataProvider/EmissionDataProvider";
 import {
   RateUpdateTx,
   RewardProgram,
   RewardsRate,
 } from "../../generated/schema";
-import { INITIAL_INDEX } from "../constants";
-import { updateRewardsRate } from "../distribute-rewards";
+import { updateTotalDistributed } from "../distribute-rewards";
 import { setupMarket, setupURD, setupUser } from "../initializers";
 import { generateLogId, hashBytes } from "../utils";
 
@@ -30,15 +31,16 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
 
   if (!rewardsRate) {
     rewardsRate = new RewardsRate(id);
-    rewardsRate.supplyIndex = INITIAL_INDEX;
-    rewardsRate.borrowIndex = INITIAL_INDEX;
-    rewardsRate.collateralIndex = INITIAL_INDEX;
+    rewardsRate.lastTotalSupplyRewards = BigInt.zero();
+    rewardsRate.lastTotalBorrowRewards = BigInt.zero();
+    rewardsRate.lastTotalCollateralRewards = BigInt.zero();
+
     rewardsRate.rewardProgram = rewardProgram.id;
     rewardsRate.market = setupMarket(event.params.market).id;
     rewardsRate.lastUpdateTimestamp = event.block.timestamp;
   } else {
     // Update the distribution up to the new timestamp.
-    rewardsRate = updateRewardsRate(rewardsRate, event.block.timestamp);
+    rewardsRate = updateTotalDistributed(rewardsRate, event.block.timestamp);
   }
 
   rewardsRate.supplyRatePerYear =

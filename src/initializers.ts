@@ -79,9 +79,8 @@ export function setupURD(address: Address): URD {
 export function setupMetaMorpho(address: Bytes): MetaMorpho {
   let metaMorpho = MetaMorpho.load(address);
   if (!metaMorpho) {
-    metaMorpho = new MetaMorpho(address);
-    metaMorpho.totalShares = BigInt.zero();
-    metaMorpho.save();
+    log.critical("MetaMorpho {} not found", [address.toHexString()]);
+    return metaMorpho!;
   }
   return metaMorpho;
 }

@@ -34,6 +34,8 @@ dataSources:
       abis:
         - name: Morpho
           file: ./abis/Morpho.json
+        - name: ERC20
+          file: ./abis/ERC20.json
       eventHandlers:
         - event: AccrueInterest(indexed bytes32,uint256,uint256,uint256)
           handler: handleAccrueInterest
@@ -71,6 +73,8 @@ dataSources:
       abis:
         - name: MetaMorphoFactory
           file: ./abis/MetaMorphoFactory.json
+        - name: ERC20
+          file: ./abis/ERC20.json
       eventHandlers:
         - event:
             CreateMetaMorpho(indexed address,indexed address,address,uint256,indexed
@@ -93,6 +97,8 @@ dataSources:
       abis:
         - name: EmissionDataProvider
           file: ./abis/EmissionDataProvider.json
+        - name: ERC20
+          file: ./abis/ERC20.json
       eventHandlers:
         - event: RewardsEmissionSet(indexed address,indexed bytes32,indexed
             address,address,(uint256,uint256,uint256))
@@ -114,6 +120,8 @@ dataSources:
       abis:
         - name: URDFactory
           file: ./abis/URDFactory.json
+        - name: ERC20
+          file: ./abis/ERC20.json
       eventHandlers:
         - event: UrdCreated(indexed address,indexed address,indexed
             address,uint256,bytes32,bytes32,bytes32)
