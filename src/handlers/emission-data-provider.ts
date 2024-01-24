@@ -2,11 +2,11 @@ import { BigInt } from "@graphprotocol/graph-ts";
 
 import { RewardsEmissionSet as RewardsEmissionSetEvent } from "../../generated/EmissionDataProvider/EmissionDataProvider";
 import {
+  MarketRewardsRates,
   RateUpdateTx,
   RewardProgram,
-  RewardsRate,
 } from "../../generated/schema";
-import { updateTotalDistributed } from "../distribute-rewards";
+import { updateTotalDistributed } from "../distribute-market-rewards";
 import { setupMarket, setupURD, setupUser } from "../initializers";
 import { generateLogId, hashBytes } from "../utils";
 
@@ -27,32 +27,39 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
   }
 
   const id = hashBytes(rewardProgram.id.concat(event.params.market));
-  let rewardsRate = RewardsRate.load(id);
+  let marketRewardsRates = MarketRewardsRates.load(id);
 
-  if (!rewardsRate) {
-    rewardsRate = new RewardsRate(id);
-    rewardsRate.lastTotalSupplyRewards = BigInt.zero();
-    rewardsRate.lastTotalBorrowRewards = BigInt.zero();
-    rewardsRate.lastTotalCollateralRewards = BigInt.zero();
+  if (!marketRewardsRates) {
+    marketRewardsRates = new MarketRewardsRates(id);
+    marketRewardsRates.lastTotalSupplyRewards = BigInt.zero();
+    marketRewardsRates.lastTotalBorrowRewards = BigInt.zero();
+    marketRewardsRates.lastTotalCollateralRewards = BigInt.zero();
 
-    rewardsRate.rewardProgram = rewardProgram.id;
-    rewardsRate.market = setupMarket(event.params.market).id;
-    rewardsRate.lastUpdateTimestamp = event.block.timestamp;
+    marketRewardsRates.supplyRewardsIndex = BigInt.zero();
+    marketRewardsRates.borrowRewardsIndex = BigInt.zero();
+    marketRewardsRates.collateralRewardsIndex = BigInt.zero();
+
+    marketRewardsRates.rewardProgram = rewardProgram.id;
+    marketRewardsRates.market = setupMarket(event.params.market).id;
+    marketRewardsRates.lastUpdateTimestamp = event.block.timestamp;
   } else {
     // Update the distribution up to the new timestamp.
-    rewardsRate = updateTotalDistributed(rewardsRate, event.block.timestamp);
+    marketRewardsRates = updateTotalDistributed(
+      marketRewardsRates,
+      event.block.timestamp
+    );
   }
 
-  rewardsRate.supplyRatePerYear =
+  marketRewardsRates.supplyRatePerYear =
     event.params.rewardsEmission.supplyRewardTokensPerYear;
-  rewardsRate.borrowRatePerYear =
+  marketRewardsRates.borrowRatePerYear =
     event.params.rewardsEmission.borrowRewardTokensPerYear;
-  rewardsRate.collateralRatePerYear =
+  marketRewardsRates.collateralRatePerYear =
     event.params.rewardsEmission.collateralRewardTokensPerYear;
 
-  rewardsRate.availableAt = event.block.timestamp;
+  marketRewardsRates.availableAt = event.block.timestamp;
 
-  rewardsRate.save();
+  marketRewardsRates.save();
 
   const rateUpdateTx = new RateUpdateTx(generateLogId(event));
   // entities already set
@@ -60,7 +67,7 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
   rateUpdateTx.urd = event.params.urd;
   rateUpdateTx.rewardToken = event.params.rewardToken;
   rateUpdateTx.rewardProgram = rewardProgram.id;
-  rateUpdateTx.rewardsRate = rewardsRate.id;
+  rateUpdateTx.rewardsRate = marketRewardsRates.id;
   rateUpdateTx.market = event.params.market;
   rateUpdateTx.supplyRatePerYear =
     event.params.rewardsEmission.supplyRewardTokensPerYear;

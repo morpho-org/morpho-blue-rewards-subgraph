@@ -13,7 +13,7 @@ import {
   SetFeeRecipient as SetFeeRecipientEvent,
 } from "../../generated/Morpho/Morpho";
 import { MorphoFeeRecipient, MorphoTx } from "../../generated/schema";
-import { handleMorphoTx } from "../distribute-rewards";
+import { handleMorphoTx } from "../distribute-market-rewards";
 import { setupMarket, setupUser } from "../initializers";
 import { generateLogId, hashBytes, PositionType } from "../utils";
 

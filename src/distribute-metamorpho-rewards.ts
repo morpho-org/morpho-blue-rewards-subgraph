@@ -1,72 +1,81 @@
-import { BigInt } from "@graphprotocol/graph-ts";
+import { BigInt, log } from "@graphprotocol/graph-ts";
 
 import {
   MetaMorphoPosition,
   MetaMorphoPositionRewards,
+  MetaMorphoRewardsAccrual,
   MetaMorphoTx,
   UserRewardProgramAccrual,
 } from "../generated/schema";
 
-import { distributeRewards } from "./distribute-rewards";
+import { RAY } from "./constants";
+import { distributeMarketRewards } from "./distribute-market-rewards";
 import {
+  getOrInitMetaMorphoPositionRewards,
+  getOrInitMetaMorphoRewardsAccrual,
   setupMetaMorpho,
   setupMetaMorphoPosition,
   setupUser,
 } from "./initializers";
-import { hashBytes } from "./utils";
 
-const VIRTUAL_ASSETS = BigInt.fromString("1");
+function accrueMetaMorphoRewardsForOneProgram(
+  mmBlueRewardsAccrual: UserRewardProgramAccrual
+): MetaMorphoRewardsAccrual {
+  const mm = setupMetaMorpho(mmBlueRewardsAccrual.metaMorpho!);
 
-function toRewardsAssets(
-  shares: BigInt,
-  totalRewardsAssets: BigInt,
-  totalShares: BigInt,
-  underlyingDecimals: BigInt
-): BigInt {
-  const wadDecimals = BigInt.fromI32(18);
-  const virtualShares = underlyingDecimals.gt(wadDecimals)
-    ? BigInt.zero()
-    : wadDecimals.minus(underlyingDecimals);
+  const mmRewardsAccrual = getOrInitMetaMorphoRewardsAccrual(
+    mmBlueRewardsAccrual.metaMorpho!,
+    mmBlueRewardsAccrual.rewardProgram
+  );
 
-  return shares
-    .times(totalRewardsAssets.plus(VIRTUAL_ASSETS))
-    .div(totalShares.plus(virtualShares));
+  const rewardsAccrued = mmBlueRewardsAccrual.supplyRewardsAccrued;
+  if (mm.totalShares.gt(BigInt.zero())) {
+    mmRewardsAccrual.lastSupplyIndex = mmRewardsAccrual.lastSupplyIndex.plus(
+      rewardsAccrued.times(RAY).div(mm.totalShares)
+    );
+  }
+
+  // if shares are zero and supply rewards not to zero, its due to a donation, and we do not redistribute them.
+  if (
+    mm.totalShares.isZero() &&
+    mmBlueRewardsAccrual.supplyRewardsAccrued.gt(BigInt.zero())
+  ) {
+    log.warning(
+      "Donation detected for metamorpho {}, {} rewards not redistributed",
+      [
+        mm.id.toHexString(),
+        mmBlueRewardsAccrual.supplyRewardsAccrued.toHexString(),
+      ]
+    );
+  }
+  mmBlueRewardsAccrual.supplyRewardsAccrued = BigInt.zero();
+  mmBlueRewardsAccrual.save();
+
+  mmRewardsAccrual.save();
+  return mmRewardsAccrual;
 }
 
 function accrueMetaMorphoPositionRewardsForOneProgram(
-  mmBlueRewardsAccrual: UserRewardProgramAccrual,
+  mmRewardsAccrual: MetaMorphoRewardsAccrual,
   mmPosition: MetaMorphoPosition
 ): MetaMorphoPositionRewards {
-  const metaMorpho = setupMetaMorpho(mmPosition.metaMorpho);
-
-  const mmPositionRewardsId = hashBytes(
-    mmPosition.id.concat(mmBlueRewardsAccrual.id)
-  );
-  let mmPositionRewards = MetaMorphoPositionRewards.load(mmPositionRewardsId);
-
-  if (!mmPositionRewards) {
-    mmPositionRewards = new MetaMorphoPositionRewards(mmPositionRewardsId);
-    mmPositionRewards.rewardsProgram = mmBlueRewardsAccrual.rewardProgram;
-    mmPositionRewards.position = mmPosition.id;
-    mmPositionRewards.rewardsAccrued = BigInt.zero();
-  }
-
-  const userAccrued = toRewardsAssets(
-    mmPosition.shares,
-    mmBlueRewardsAccrual.supplyRewardsAccrued,
-    metaMorpho.totalShares,
-    metaMorpho.underlyingDecimals
+  let mmPositionRewards = getOrInitMetaMorphoPositionRewards(
+    mmRewardsAccrual.id,
+    mmPosition.id
   );
 
-  // We reduce the accrued rewards from the total accrued rewards, since they are now accounted in the user's position.
-  mmBlueRewardsAccrual.supplyRewardsAccrued =
-    mmBlueRewardsAccrual.supplyRewardsAccrued.minus(userAccrued);
-  mmBlueRewardsAccrual.save();
+  const userAccrued = mmRewardsAccrual.lastSupplyIndex
+    .minus(mmPositionRewards.lastIndex)
+    .times(mmPosition.shares)
+    .div(RAY);
 
   mmPositionRewards.rewardsAccrued =
     mmPositionRewards.rewardsAccrued.plus(userAccrued);
 
+  mmPositionRewards.lastIndex = mmRewardsAccrual.lastSupplyIndex;
+
   mmPositionRewards.save();
+
   return mmPositionRewards;
 }
 
@@ -79,7 +88,11 @@ export function distributeMetaMorphoRewards(mmTx: MetaMorphoTx): void {
 
   for (let i = 0; i < bluePositions.length; i++) {
     const bluePosition = bluePositions[i];
-    distributeRewards(bluePosition.market, bluePosition.user, mmTx.timestamp);
+    distributeMarketRewards(
+      bluePosition.market,
+      bluePosition.user,
+      mmTx.timestamp
+    );
   }
 
   // Refresh entity
@@ -92,14 +105,17 @@ export function distributeMetaMorphoRewards(mmTx: MetaMorphoTx): void {
 
   // Then, we need to accrue the rewards for the vault, per RewardProgram, for the given user.
   for (let i = 0; i < metaMorphoRewardsAccruals.length; i++) {
-    const metaMorphoRewardsAccrual = metaMorphoRewardsAccruals[i];
+    const mmBlueRewardsAccrual = metaMorphoRewardsAccruals[i];
+
+    // first, we need to accrue the rewards for the metamorpho vault
+    const metaMorphoRewardsAccrual =
+      accrueMetaMorphoRewardsForOneProgram(mmBlueRewardsAccrual);
 
     // Then, we update the rewards for the given user.
-    const positionRewards = accrueMetaMorphoPositionRewardsForOneProgram(
+    accrueMetaMorphoPositionRewardsForOneProgram(
       metaMorphoRewardsAccrual,
       position
     );
-    positionRewards.save();
   }
 
   // shares are negative for withdrawals
