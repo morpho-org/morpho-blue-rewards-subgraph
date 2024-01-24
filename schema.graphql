@@ -121,19 +121,6 @@ type UserRewardProgramAccrual @entity {
     borrowRewardsAccrued: BigInt!
     collateralRewardsAccrued: BigInt!
 }
-
-type MetaMorphoRewardsAccrual @entity {
-    "concat of the user address and the reward program id"
-    id: Bytes!
-
-    metaMorpho: MetaMorpho!
-    rewardProgram: RewardProgram!
-
-    supplyRewardsAccrued: BigInt!
-    lastSupplyIndex: BigInt!
-
-}
-
 type MarketRewardsRates @entity {
   "concat of the RewardProgram id & the Market ID"
   id: Bytes!
@@ -205,6 +192,19 @@ type MetaMorpho @entity {
     metamorphoAccruals: [MetaMorphoRewardsAccrual!]! @derivedFrom(field: "metaMorpho")
     blueRewardsProgramAccruals: [UserRewardProgramAccrual!]! @derivedFrom(field: "metaMorpho")
 }
+
+type MetaMorphoRewardsAccrual @entity {
+    "concat of the user address and the reward program id"
+    id: Bytes!
+
+    metaMorpho: MetaMorpho!
+    rewardProgram: RewardProgram!
+
+    supplyRewardsAccrued: BigInt!
+    lastSupplyIndex: BigInt!
+
+}
+
 
 type MetaMorphoPosition @entity {
   id: Bytes!

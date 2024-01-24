@@ -11,8 +11,8 @@ import {
 import { RAY } from "./constants";
 import { distributeMarketRewards } from "./distribute-market-rewards";
 import {
-  getOrInitMetaMorphoPositionRewards,
-  getOrInitMetaMorphoRewardsAccrual,
+  setupMetaMorphoPositionRewards,
+  setupMetaMorphoRewardsAccrual,
   setupMetaMorpho,
   setupMetaMorphoPosition,
   setupUser,
@@ -23,7 +23,7 @@ function accrueMetaMorphoRewardsForOneProgram(
 ): MetaMorphoRewardsAccrual {
   const mm = setupMetaMorpho(mmBlueRewardsAccrual.metaMorpho!);
 
-  const mmRewardsAccrual = getOrInitMetaMorphoRewardsAccrual(
+  const mmRewardsAccrual = setupMetaMorphoRewardsAccrual(
     mmBlueRewardsAccrual.metaMorpho!,
     mmBlueRewardsAccrual.rewardProgram
   );
@@ -59,7 +59,7 @@ function accrueMetaMorphoPositionRewardsForOneProgram(
   mmRewardsAccrual: MetaMorphoRewardsAccrual,
   mmPosition: MetaMorphoPosition
 ): MetaMorphoPositionRewards {
-  let mmPositionRewards = getOrInitMetaMorphoPositionRewards(
+  let mmPositionRewards = setupMetaMorphoPositionRewards(
     mmRewardsAccrual.id,
     mmPosition.id
   );

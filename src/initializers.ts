@@ -7,6 +7,7 @@ import {
   MetaMorphoPositionRewards,
   MetaMorphoRewardsAccrual,
   Position,
+  PositionRewards,
   URD,
   User,
   UserRewardProgramAccrual,
@@ -70,6 +71,27 @@ export function setupPosition(marketId: Bytes, userAddress: Bytes): Position {
   return position;
 }
 
+export function setupPositionRewards(
+  marketRewardsId: Bytes,
+  positionId: Bytes
+): PositionRewards {
+  const positionRewardsId = hashBytes(positionId.concat(marketRewardsId));
+  let positionRewards = PositionRewards.load(positionRewardsId);
+
+  if (!positionRewards) {
+    positionRewards = new PositionRewards(positionRewardsId);
+    positionRewards.rewardsRate = marketRewardsId;
+    positionRewards.position = positionId;
+    positionRewards.positionSupplyAccrued = BigInt.zero();
+    positionRewards.positionBorrowAccrued = BigInt.zero();
+    positionRewards.positionCollateralAccrued = BigInt.zero();
+    positionRewards.lastPositionSupplyIndex = BigInt.zero();
+    positionRewards.lastPositionBorrowIndex = BigInt.zero();
+    positionRewards.lastPositionCollateralIndex = BigInt.zero();
+  }
+  return positionRewards;
+}
+
 export function setupURD(address: Address): URD {
   let urd = URD.load(address);
   if (!urd) {
@@ -104,7 +126,7 @@ export function setupMetaMorphoPosition(
   return metaMorphoPosition;
 }
 
-export function getOrInitUserRewardProgramAccrual(
+export function setupUserRewardProgramAccrual(
   userId: Bytes,
   rewardProgramId: Bytes
 ) {
@@ -127,7 +149,7 @@ export function getOrInitUserRewardProgramAccrual(
   return userAccrualProgram;
 }
 
-export function getOrInitMetaMorphoRewardsAccrual(
+export function setupMetaMorphoRewardsAccrual(
   metaMorphoId: Bytes,
   rewardProgramId: Bytes
 ): MetaMorphoRewardsAccrual {
@@ -146,7 +168,7 @@ export function getOrInitMetaMorphoRewardsAccrual(
   return mmRewardsAccrual;
 }
 
-export function getOrInitMetaMorphoPositionRewards(
+export function setupMetaMorphoPositionRewards(
   mmRewardsAccrualId: Bytes,
   mmPositionId: Bytes
 ): MetaMorphoPositionRewards {

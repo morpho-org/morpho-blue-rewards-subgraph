@@ -10,10 +10,11 @@ import {
 import { ONE_YEAR, RAY } from "./constants";
 import {
   getMarket,
-  getOrInitUserRewardProgramAccrual,
+  setupUserRewardProgramAccrual,
   setupPosition,
+  setupPositionRewards,
 } from "./initializers";
-import { hashBytes, PositionType } from "./utils";
+import { PositionType } from "./utils";
 
 export function handleMorphoTx(morphoTx: MorphoTx): void {
   distributeMarketRewards(morphoTx.market, morphoTx.user, morphoTx.timestamp);
@@ -100,7 +101,6 @@ export function updateTotalDistributed(
   marketRewards.save();
   return marketRewards;
 }
-
 export function accruePositionRewardsForOneRate(
   marketRewardsRates: MarketRewardsRates,
   positionId: Bytes
@@ -110,23 +110,11 @@ export function accruePositionRewardsForOneRate(
     log.critical("Position {} not found", [positionId.toHexString()]);
     return new PositionRewards(Bytes.empty());
   }
-  const positionRewardsId = hashBytes(
-    position.id.concat(marketRewardsRates.id)
+
+  const positionRewards = setupPositionRewards(
+    marketRewardsRates.id,
+    position.id
   );
-  let positionRewards = PositionRewards.load(positionRewardsId);
-
-  if (!positionRewards) {
-    positionRewards = new PositionRewards(positionRewardsId);
-    positionRewards.rewardsRate = marketRewardsRates.id;
-    positionRewards.position = position.id;
-    positionRewards.positionSupplyAccrued = BigInt.zero();
-    positionRewards.positionBorrowAccrued = BigInt.zero();
-    positionRewards.positionCollateralAccrued = BigInt.zero();
-    positionRewards.lastPositionSupplyIndex = BigInt.zero();
-    positionRewards.lastPositionBorrowIndex = BigInt.zero();
-    positionRewards.lastPositionCollateralIndex = BigInt.zero();
-  }
-
   const totalSupplyRewards = marketRewardsRates.supplyRewardsIndex
     .minus(positionRewards.lastPositionSupplyIndex)
     .times(position.supplyShares)
@@ -163,7 +151,7 @@ export function accruePositionRewardsForOneRate(
   positionRewards.save();
 
   // Then accrue the rewards for the user accrual program
-  let userAccrualProgram = getOrInitUserRewardProgramAccrual(
+  const userAccrualProgram = setupUserRewardProgramAccrual(
     position.user,
     marketRewardsRates.rewardProgram
   );
