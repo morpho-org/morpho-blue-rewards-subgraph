@@ -55,6 +55,12 @@ export function setupPosition(marketId: Bytes, userAddress: Bytes): Position {
     position.supplyShares = BigInt.zero();
     position.borrowShares = BigInt.zero();
     position.collateral = BigInt.zero();
+    const metamorpho = MetaMorpho.load(userAddress);
+
+    if (metamorpho !== null) {
+      position.metaMorpho = metamorpho.id;
+    }
+
     position.save();
   }
 

@@ -42,11 +42,11 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
   }
 
   rewardsRate.supplyRatePerYear =
-    event.params.rewardsEmission.supplyRatePerYear;
+    event.params.rewardsEmission.supplyRewardTokensPerYear;
   rewardsRate.borrowRatePerYear =
-    event.params.rewardsEmission.borrowRatePerYear;
+    event.params.rewardsEmission.borrowRewardTokensPerYear;
   rewardsRate.collateralRatePerYear =
-    event.params.rewardsEmission.collateralRatePerYear;
+    event.params.rewardsEmission.collateralRewardTokensPerYear;
 
   rewardsRate.availableAt = event.block.timestamp;
 
@@ -61,11 +61,11 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
   rateUpdateTx.rewardsRate = rewardsRate.id;
   rateUpdateTx.market = event.params.market;
   rateUpdateTx.supplyRatePerYear =
-    event.params.rewardsEmission.supplyRatePerYear;
+    event.params.rewardsEmission.supplyRewardTokensPerYear;
   rateUpdateTx.borrowRatePerYear =
-    event.params.rewardsEmission.borrowRatePerYear;
+    event.params.rewardsEmission.borrowRewardTokensPerYear;
   rateUpdateTx.collateralRatePerYear =
-    event.params.rewardsEmission.collateralRatePerYear;
+    event.params.rewardsEmission.collateralRewardTokensPerYear;
   rateUpdateTx.timestamp = event.block.timestamp;
 
   rateUpdateTx.txHash = event.transaction.hash;

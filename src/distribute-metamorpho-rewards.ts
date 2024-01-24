@@ -92,6 +92,7 @@ export function distributeMetaMorphoRewards(mmTx: MetaMorphoTx): void {
 
   const position = setupMetaMorphoPosition(mmTx.user, mmTx.metaMorpho);
 
+  // Then, we need to accrue the rewards for the vault, per RewardProgram, for the given user.
   for (let i = 0; i < metaMorphoRewardsAccruals.length; i++) {
     const metaMorphoRewardsAccrual = metaMorphoRewardsAccruals[i];
     let metaMorphoRewards = accrueMetaMorphoRewardsForOneProgram(
@@ -107,4 +108,12 @@ export function distributeMetaMorphoRewards(mmTx: MetaMorphoTx): void {
     );
     positionRewards.save();
   }
+
+  // shares are negative for withdrawals
+  position.shares = position.shares.plus(mmTx.shares);
+  position.save();
+
+  const metaMorpho = setupMetaMorpho(mmTx.metaMorpho);
+  metaMorpho.totalShares = metaMorpho.totalShares.plus(mmTx.shares);
+  metaMorpho.save();
 }

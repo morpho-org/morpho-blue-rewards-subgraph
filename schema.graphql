@@ -40,9 +40,10 @@ type User @entity {
   rewardProgramAccruals: [UserRewardProgramAccrual!]! @derivedFrom(field: "user")
   rewardProgramsOwned: [RewardProgram!]! @derivedFrom(field: "sender")
 
+  morphoFeeRecipient: MorphoFeeRecipient! @derivedFrom(field: "feeRecipient")
   metaMorphoFeeRecipients: [MorphoFeeRecipient!]! @derivedFrom(field: "feeRecipient")
   metaMorphoPositions: [MetaMorphoPosition!]! @derivedFrom(field: "user")
-    metaMorphoTxs: [MetaMorphoTx!]! @derivedFrom(field: "user")
+  metaMorphoTxs: [MetaMorphoTx!]! @derivedFrom(field: "user")
 }
 
 type Market @entity {
@@ -74,6 +75,7 @@ type Position @entity {
   collateral: BigInt!
 
   rewards: [PositionRewards!]! @derivedFrom(field: "position")
+metaMorpho: MetaMorpho
 }
 
 type PositionRewards @entity {
@@ -179,7 +181,7 @@ type MetaMorpho @entity {
     metaMorphoTxs: [MetaMorphoTx!]! @derivedFrom(field: "metaMorpho")
     positions: [MetaMorphoPosition!]! @derivedFrom(field: "metaMorpho")
     rewards: [MetaMorphoRewards!]! @derivedFrom(field: "metaMorpho")
-
+    bluePositions: [Position!]! @derivedFrom(field: "metaMorpho")
 }
 
 type MetaMorphoPosition @entity {
@@ -192,6 +194,7 @@ type MetaMorphoPosition @entity {
   shares: BigInt!
 
   rewards: [MetaMorphoPositionRewards!]! @derivedFrom(field: "position")
+  metaMorphoTxs: [MetaMorphoTx!]! @derivedFrom(field: "position")
 
 }
 
@@ -230,6 +233,8 @@ type MetaMorphoTx @entity {
     metaMorpho: MetaMorpho!
 
     user: User!
+
+    position: MetaMorphoPosition!
 
     shares: BigInt!
 

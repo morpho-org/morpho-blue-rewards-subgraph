@@ -9,7 +9,11 @@ import {
 } from "../../generated/MetaMorpho/MetaMorpho";
 import { MetaMorphoTx } from "../../generated/schema";
 import { distributeMetaMorphoRewards } from "../distribute-metamorpho-rewards";
-import { setupMetaMorpho, setupUser } from "../initializers";
+import {
+  setupMetaMorpho,
+  setupMetaMorphoPosition,
+  setupUser,
+} from "../initializers";
 import { generateLogId } from "../utils";
 
 export function handleAccrueFee(event: AccrueFeeEvent): void {
@@ -28,7 +32,7 @@ export function handleAccrueFee(event: AccrueFeeEvent): void {
 
   const mmTx = new MetaMorphoTx(id);
   mmTx.metaMorpho = mm.id;
-  mmTx.user = mm.feeRecipient!;
+  mmTx.user = setupUser(mm.feeRecipient!).id;
   mmTx.shares = event.params.feeShares;
   mmTx.timestamp = event.block.timestamp;
 
@@ -47,10 +51,11 @@ export function handleDeposit(event: DepositEvent): void {
   const mmTx = new MetaMorphoTx(id);
   mmTx.metaMorpho = setupMetaMorpho(event.address).id;
 
-  mmTx.user = setupMetaMorpho(event.params.owner).id;
+  mmTx.user = setupUser(event.params.owner).id;
+  mmTx.position = setupMetaMorphoPosition(event.params.owner, event.address).id;
   mmTx.shares = event.params.shares;
-  mmTx.timestamp = event.block.timestamp;
 
+  mmTx.timestamp = event.block.timestamp;
   mmTx.txHash = event.transaction.hash;
   mmTx.txIndex = event.transaction.index;
   mmTx.logIndex = event.logIndex;
@@ -72,10 +77,14 @@ export function handleTransfer(event: TransferEvent): void {
   const mmTxFrom = new MetaMorphoTx(idFrom);
   mmTxFrom.metaMorpho = setupMetaMorpho(event.address).id;
 
-  mmTxFrom.user = setupMetaMorpho(event.params.from).id;
+  mmTxFrom.user = setupUser(event.params.from).id;
+  mmTxFrom.position = setupMetaMorphoPosition(
+    event.params.from,
+    event.address
+  ).id;
   mmTxFrom.shares = event.params.value.neg();
-  mmTxFrom.timestamp = event.block.timestamp;
 
+  mmTxFrom.timestamp = event.block.timestamp;
   mmTxFrom.txHash = event.transaction.hash;
   mmTxFrom.txIndex = event.transaction.index;
   mmTxFrom.logIndex = event.logIndex;
@@ -89,7 +98,8 @@ export function handleTransfer(event: TransferEvent): void {
   const mmTxTo = new MetaMorphoTx(idTo);
   mmTxTo.metaMorpho = setupMetaMorpho(event.address).id;
 
-  mmTxTo.user = setupMetaMorpho(event.params.to).id;
+  mmTxTo.user = setupUser(event.params.to).id;
+  mmTxTo.position = setupMetaMorphoPosition(event.params.to, event.address).id;
   mmTxTo.shares = event.params.value;
   mmTxTo.timestamp = event.block.timestamp;
 
@@ -108,7 +118,8 @@ export function handleWithdraw(event: WithdrawEvent): void {
   const mmTx = new MetaMorphoTx(id);
   mmTx.metaMorpho = setupMetaMorpho(event.address).id;
 
-  mmTx.user = setupMetaMorpho(event.params.owner).id;
+  mmTx.user = setupUser(event.params.owner).id;
+  mmTx.position = setupMetaMorphoPosition(event.params.owner, event.address).id;
   mmTx.shares = event.params.shares.neg();
   mmTx.timestamp = event.block.timestamp;
 
