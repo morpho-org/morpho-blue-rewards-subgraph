@@ -79,8 +79,9 @@ export function handleLiquidate(event: LiquidateEvent): void {
   repayMorphoTx.type = PositionType.BORROW;
   repayMorphoTx.user = setupUser(event.params.borrower).id;
   repayMorphoTx.market = setupMarket(event.params.id).id;
-  // TODO: check bad debt
-  repayMorphoTx.shares = event.params.repaidShares.neg();
+  repayMorphoTx.shares = event.params.repaidShares
+    .plus(event.params.badDebtShares)
+    .neg();
 
   repayMorphoTx.timestamp = event.block.timestamp;
 

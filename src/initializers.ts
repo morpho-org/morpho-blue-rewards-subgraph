@@ -129,7 +129,7 @@ export function setupMetaMorphoPosition(
 export function setupUserRewardProgramAccrual(
   userId: Bytes,
   rewardProgramId: Bytes
-) {
+): UserRewardProgramAccrual {
   let userAccrualId = hashBytes(userId.concat(rewardProgramId));
   let userAccrualProgram = UserRewardProgramAccrual.load(userAccrualId);
   if (!userAccrualProgram) {
