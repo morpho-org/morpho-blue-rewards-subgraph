@@ -6,7 +6,7 @@ import {
   RootSet as RootSetEvent,
   RootUpdaterSet as RootUpdaterSetEvent,
   TimelockSet as TimelockSetEvent,
-} from "../../generated/URD/URD";
+} from "../../generated/templates/URD/URD";
 
 export function handleClaimed(event: ClaimedEvent): void {}
 

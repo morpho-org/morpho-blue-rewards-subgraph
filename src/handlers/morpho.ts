@@ -3,7 +3,6 @@ import { Bytes, log } from "@graphprotocol/graph-ts";
 import {
   AccrueInterest as AccrueInterestEvent,
   Borrow as BorrowEvent,
-  Liquidate,
   Liquidate as LiquidateEvent,
   Repay as RepayEvent,
   Supply as SupplyEvent,
@@ -66,9 +65,6 @@ export function handleBorrow(event: BorrowEvent): void {
   handleMorphoTx(morphoTx);
 }
 
-export function handleLiquidateGoerli(event: Liquidate): void {
-  handleLiquidate(event as LiquidateEvent);
-}
 export function handleLiquidate(event: LiquidateEvent): void {
   const repayId = hashBytes(
     event.transaction.hash

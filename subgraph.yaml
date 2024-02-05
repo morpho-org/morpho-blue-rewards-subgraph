@@ -184,7 +184,7 @@ templates:
       apiVersion: 0.0.7
       language: wasm/assemblyscript
       entities:
-        - AccrueFee
+        - AccrueInterest
         - Deposit
         - Transfer
         - Withdraw
@@ -193,8 +193,8 @@ templates:
         - name: MetaMorpho
           file: ./abis/MetaMorpho.json
       eventHandlers:
-        - event: AccrueFee(uint256)
-          handler: handleAccrueFee
+        - event: AccrueInterest(uint256,uint256)
+          handler: handleAccrueInterest
         - event: Deposit(indexed address,indexed address,uint256,uint256)
           handler: handleDeposit
         - event: Transfer(indexed address,indexed address,uint256)

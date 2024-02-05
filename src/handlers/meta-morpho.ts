@@ -1,13 +1,13 @@
 import { Address, Bytes, log } from "@graphprotocol/graph-ts";
 
+import { MetaMorphoTx } from "../../generated/schema";
 import {
-  AccrueFee as AccrueFeeEvent,
+  AccrueInterest as AccrueInterestEvent,
   Deposit as DepositEvent,
   Transfer as TransferEvent,
   Withdraw as WithdrawEvent,
   SetFeeRecipient as SetFeeRecipientEvent,
-} from "../../generated/MetaMorpho/MetaMorpho";
-import { MetaMorphoTx } from "../../generated/schema";
+} from "../../generated/templates/MetaMorpho/MetaMorpho";
 import { distributeMetaMorphoRewards } from "../distribute-metamorpho-rewards";
 import {
   setupMetaMorpho,
@@ -16,7 +16,7 @@ import {
 } from "../initializers";
 import { generateLogId } from "../utils";
 
-export function handleAccrueFee(event: AccrueFeeEvent): void {
+export function handleAccrueInterest(event: AccrueInterestEvent): void {
   if (event.params.feeShares.isZero()) return;
 
   const mm = setupMetaMorpho(event.address);
