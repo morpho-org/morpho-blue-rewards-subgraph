@@ -33,6 +33,7 @@ export function handleAccrueInterest(event: AccrueInterestEvent): void {
   const mmTx = new MetaMorphoTx(id);
   mmTx.metaMorpho = mm.id;
   mmTx.user = setupUser(mm.feeRecipient!).id;
+  mmTx.position = setupMetaMorphoPosition(mm.feeRecipient!, event.address).id;
   mmTx.shares = event.params.feeShares;
   mmTx.timestamp = event.block.timestamp;
 
