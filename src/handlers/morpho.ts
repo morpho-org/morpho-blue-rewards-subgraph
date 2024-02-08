@@ -75,9 +75,10 @@ export function handleLiquidate(event: LiquidateEvent): void {
   repayMorphoTx.type = PositionType.BORROW;
   repayMorphoTx.user = setupUser(event.params.borrower).id;
   repayMorphoTx.market = setupMarket(event.params.id).id;
-  repayMorphoTx.shares = event.params.repaidShares
-    .plus(event.params.badDebtShares)
-    .neg();
+  const totalShares = event.params.repaidShares.plus(
+    event.params.badDebtShares
+  );
+  repayMorphoTx.shares = totalShares.neg();
 
   repayMorphoTx.timestamp = event.block.timestamp;
 
@@ -95,7 +96,7 @@ export function handleLiquidate(event: LiquidateEvent): void {
       .concat(Bytes.fromUTF8(PositionType.COLLATERAL))
   );
   const withdrawCollatTx = new MorphoTx(withdrawCollatId);
-  withdrawCollatTx.type = PositionType.BORROW;
+  withdrawCollatTx.type = PositionType.COLLATERAL;
   withdrawCollatTx.user = setupUser(event.params.borrower).id;
   withdrawCollatTx.market = setupMarket(event.params.id).id;
   withdrawCollatTx.shares = event.params.seizedAssets.neg();
