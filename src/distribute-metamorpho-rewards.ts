@@ -2,7 +2,7 @@ import { BigInt, log } from "@graphprotocol/graph-ts";
 
 import {
   MetaMorphoPosition,
-  MetaMorphoPositionRewards,
+  MetaMorphoPositionReward,
   MetaMorphoRewardsAccrual,
   MetaMorphoTx,
   UserRewardProgramAccrual,
@@ -11,7 +11,7 @@ import {
 import { RAY } from "./constants";
 import { distributeMarketRewards } from "./distribute-market-rewards";
 import {
-  setupMetaMorphoPositionRewards,
+  setupMetaMorphoPositionReward,
   setupMetaMorphoRewardsAccrual,
   setupMetaMorpho,
   setupMetaMorphoPosition,
@@ -55,28 +55,28 @@ function accrueMetaMorphoRewardsForOneProgram(
   return mmRewardsAccrual;
 }
 
-function accrueMetaMorphoPositionRewardsForOneProgram(
+function accrueMetaMorphoPositionRewardForOneProgram(
   mmRewardsAccrual: MetaMorphoRewardsAccrual,
   mmPosition: MetaMorphoPosition
-): MetaMorphoPositionRewards {
-  let mmPositionRewards = setupMetaMorphoPositionRewards(
+): MetaMorphoPositionReward {
+  let mmPositionReward = setupMetaMorphoPositionReward(
     mmRewardsAccrual.id,
     mmPosition.id
   );
 
   const userAccrued = mmRewardsAccrual.lastSupplyIndex
-    .minus(mmPositionRewards.lastIndex)
+    .minus(mmPositionReward.lastIndex)
     .times(mmPosition.shares)
     .div(RAY);
 
-  mmPositionRewards.rewardsAccrued =
-    mmPositionRewards.rewardsAccrued.plus(userAccrued);
+  mmPositionReward.rewardsAccrued =
+    mmPositionReward.rewardsAccrued.plus(userAccrued);
 
-  mmPositionRewards.lastIndex = mmRewardsAccrual.lastSupplyIndex;
+  mmPositionReward.lastIndex = mmRewardsAccrual.lastSupplyIndex;
 
-  mmPositionRewards.save();
+  mmPositionReward.save();
 
-  return mmPositionRewards;
+  return mmPositionReward;
 }
 
 export function distributeMetaMorphoRewards(mmTx: MetaMorphoTx): void {
@@ -112,7 +112,7 @@ export function distributeMetaMorphoRewards(mmTx: MetaMorphoTx): void {
       accrueMetaMorphoRewardsForOneProgram(mmBlueRewardsAccrual);
 
     // Then, we update the rewards for the given user.
-    accrueMetaMorphoPositionRewardsForOneProgram(
+    accrueMetaMorphoPositionRewardForOneProgram(
       metaMorphoRewardsAccrual,
       position
     );

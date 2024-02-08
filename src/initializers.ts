@@ -4,10 +4,10 @@ import {
   Market,
   MetaMorpho,
   MetaMorphoPosition,
-  MetaMorphoPositionRewards,
+  MetaMorphoPositionReward,
   MetaMorphoRewardsAccrual,
   Position,
-  PositionRewards,
+  PositionReward,
   URD,
   User,
   UserRewardProgramAccrual,
@@ -71,15 +71,15 @@ export function setupPosition(marketId: Bytes, userAddress: Bytes): Position {
   return position;
 }
 
-export function setupPositionRewards(
+export function setupPositionReward(
   marketRewardsId: Bytes,
   positionId: Bytes
-): PositionRewards {
+): PositionReward {
   const positionRewardsId = hashBytes(positionId.concat(marketRewardsId));
-  let positionRewards = PositionRewards.load(positionRewardsId);
+  let positionRewards = PositionReward.load(positionRewardsId);
 
   if (!positionRewards) {
-    positionRewards = new PositionRewards(positionRewardsId);
+    positionRewards = new PositionReward(positionRewardsId);
     positionRewards.rewardsRate = marketRewardsId;
     positionRewards.position = positionId;
     positionRewards.positionSupplyAccrued = BigInt.zero();
@@ -168,21 +168,19 @@ export function setupMetaMorphoRewardsAccrual(
   return mmRewardsAccrual;
 }
 
-export function setupMetaMorphoPositionRewards(
+export function setupMetaMorphoPositionReward(
   mmRewardsAccrualId: Bytes,
   mmPositionId: Bytes
-): MetaMorphoPositionRewards {
-  const mmPositionRewardsId = hashBytes(
-    mmPositionId.concat(mmRewardsAccrualId)
-  );
-  let mmPositionRewards = MetaMorphoPositionRewards.load(mmPositionRewardsId);
+): MetaMorphoPositionReward {
+  const mmPositionRewardId = hashBytes(mmPositionId.concat(mmRewardsAccrualId));
+  let mmPositionReward = MetaMorphoPositionReward.load(mmPositionRewardId);
 
-  if (!mmPositionRewards) {
-    mmPositionRewards = new MetaMorphoPositionRewards(mmPositionRewardsId);
-    mmPositionRewards.rewardsAccrual = mmRewardsAccrualId;
-    mmPositionRewards.position = mmPositionId;
-    mmPositionRewards.rewardsAccrued = BigInt.zero();
-    mmPositionRewards.lastIndex = BigInt.zero();
+  if (!mmPositionReward) {
+    mmPositionReward = new MetaMorphoPositionReward(mmPositionRewardId);
+    mmPositionReward.rewardsAccrual = mmRewardsAccrualId;
+    mmPositionReward.position = mmPositionId;
+    mmPositionReward.rewardsAccrued = BigInt.zero();
+    mmPositionReward.lastIndex = BigInt.zero();
   }
-  return mmPositionRewards;
+  return mmPositionReward;
 }

@@ -2,7 +2,7 @@ import { BigInt } from "@graphprotocol/graph-ts";
 
 import { RewardsEmissionSet as RewardsEmissionSetEvent } from "../../generated/EmissionDataProvider/EmissionDataProvider";
 import {
-  MarketRewardsRates,
+  MarketRewardsRate,
   RateUpdateTx,
   RewardProgram,
 } from "../../generated/schema";
@@ -27,10 +27,10 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
   }
 
   const id = hashBytes(rewardProgram.id.concat(event.params.market));
-  let marketRewardsRates = MarketRewardsRates.load(id);
+  let marketRewardsRates = MarketRewardsRate.load(id);
 
   if (!marketRewardsRates) {
-    marketRewardsRates = new MarketRewardsRates(id);
+    marketRewardsRates = new MarketRewardsRate(id);
     marketRewardsRates.lastTotalSupplyRewards = BigInt.zero();
     marketRewardsRates.lastTotalBorrowRewards = BigInt.zero();
     marketRewardsRates.lastTotalCollateralRewards = BigInt.zero();

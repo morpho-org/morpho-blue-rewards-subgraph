@@ -54,7 +54,7 @@ type Market @entity {
   totalCollateral: BigInt!
 
   morphoTxs: [MorphoTx!]! @derivedFrom(field: "market")
-  rewardsRates: [MarketRewardsRates!]! @derivedFrom(field: "market")
+  rewardsRates: [MarketRewardsRate!]! @derivedFrom(field: "market")
   positions: [Position!]! @derivedFrom(field: "market")
 }
 
@@ -74,15 +74,15 @@ type Position @entity {
   borrowShares: BigInt!
   collateral: BigInt!
 
-  rewards: [PositionRewards!]! @derivedFrom(field: "position")
+  rewards: [PositionReward!]! @derivedFrom(field: "position")
   metaMorpho: MetaMorpho
 }
 
-type PositionRewards @entity {
+type PositionReward @entity {
   "concat of the position id and the rewards rate id"
   id: Bytes!
 
-  rewardsRate: MarketRewardsRates!
+  rewardsRate: MarketRewardsRate!
   position: Position!
 
     lastPositionSupplyIndex: BigInt!
@@ -102,7 +102,7 @@ type RewardProgram @entity {
     urd: URD!
     rewardToken: Bytes!
 
-    rates: [MarketRewardsRates!]! @derivedFrom(field: "rewardProgram")
+    rates: [MarketRewardsRate!]! @derivedFrom(field: "rewardProgram")
     rateUpdates: [RateUpdateTx!]! @derivedFrom(field: "rewardProgram")
     userRewardProgramAccruals: [UserRewardProgramAccrual!]! @derivedFrom(field: "rewardProgram")
 }
@@ -121,7 +121,7 @@ type UserRewardProgramAccrual @entity {
     borrowRewardsAccrued: BigInt!
     collateralRewardsAccrued: BigInt!
 }
-type MarketRewardsRates @entity {
+type MarketRewardsRate @entity {
   "concat of the RewardProgram id & the Market ID"
   id: Bytes!
   rewardProgram: RewardProgram!
@@ -146,7 +146,7 @@ type MarketRewardsRates @entity {
   lastUpdateTimestamp: BigInt!
 
   rateUpdates: [RateUpdateTx!]! @derivedFrom(field: "rewardsRate")
-  positionsRewards: [PositionRewards!]! @derivedFrom(field: "rewardsRate")
+  positionsRewards: [PositionReward!]! @derivedFrom(field: "rewardsRate")
 
 }
 
@@ -166,7 +166,7 @@ type RateUpdateTx @entity {
   collateralRatePerYear: BigInt!
 
   rewardProgram: RewardProgram!
-  rewardsRate: MarketRewardsRates!
+  rewardsRate: MarketRewardsRate!
 
   timestamp: BigInt!
 
@@ -215,12 +215,12 @@ type MetaMorphoPosition @entity {
 
   shares: BigInt!
 
-  rewards: [MetaMorphoPositionRewards!]! @derivedFrom(field: "position")
+  rewards: [MetaMorphoPositionReward!]! @derivedFrom(field: "position")
   metaMorphoTxs: [MetaMorphoTx!]! @derivedFrom(field: "position")
 
 }
 
-type MetaMorphoPositionRewards @entity {
+type MetaMorphoPositionReward @entity {
 
         " concat of the metamorpho rewards id and the position id"
       id: Bytes!

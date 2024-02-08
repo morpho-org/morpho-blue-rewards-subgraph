@@ -1,10 +1,10 @@
 import { BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
-  MarketRewardsRates,
+  MarketRewardsRate,
   MorphoTx,
   Position,
-  PositionRewards,
+  PositionReward,
 } from "../generated/schema";
 
 import { ONE_YEAR, RAY } from "./constants";
@@ -12,7 +12,7 @@ import {
   getMarket,
   setupUserRewardProgramAccrual,
   setupPosition,
-  setupPositionRewards,
+  setupPositionReward,
 } from "./initializers";
 import { PositionType } from "./utils";
 
@@ -46,9 +46,9 @@ export function handleMorphoTx(morphoTx: MorphoTx): void {
  * It is editing the rewardsRate entity and it saves it at the end.
  */
 export function updateTotalDistributed(
-  marketRewards: MarketRewardsRates,
+  marketRewards: MarketRewardsRate,
   timestamp: BigInt
-): MarketRewardsRates {
+): MarketRewardsRate {
   const timeDelta = timestamp.minus(marketRewards.lastUpdateTimestamp);
   if (!timeDelta.ge(BigInt.zero())) {
     log.critical("Invalid time delta {} for rewards rate {}", [
@@ -101,17 +101,17 @@ export function updateTotalDistributed(
   marketRewards.save();
   return marketRewards;
 }
-export function accruePositionRewardsForOneRate(
-  marketRewardsRates: MarketRewardsRates,
+export function accruePositionRewardForOneRate(
+  marketRewardsRates: MarketRewardsRate,
   positionId: Bytes
-): PositionRewards {
+): PositionReward {
   const position = Position.load(positionId);
   if (!position) {
     log.critical("Position {} not found", [positionId.toHexString()]);
-    return new PositionRewards(Bytes.empty());
+    return new PositionReward(Bytes.empty());
   }
 
-  const positionRewards = setupPositionRewards(
+  const positionRewards = setupPositionReward(
     marketRewardsRates.id,
     position.id
   );
@@ -187,7 +187,7 @@ export function distributeMarketRewards(
     updatedRewards.save();
 
     if (position) {
-      accruePositionRewardsForOneRate(updatedRewards, position.id);
+      accruePositionRewardForOneRate(updatedRewards, position.id);
     }
   }
 }
