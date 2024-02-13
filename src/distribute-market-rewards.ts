@@ -7,7 +7,7 @@ import {
   PositionReward,
 } from "../generated/schema";
 
-import { ONE_YEAR, RAY } from "./constants";
+import { ONE_YEAR, PRECISION } from "./constants";
 import {
   getMarket,
   setupUserRewardProgramAccrual,
@@ -63,11 +63,12 @@ export function updateTotalDistributed(
     const supplyAccrued = marketRewards.supplyRatePerYear
       .times(timeDelta)
       .div(ONE_YEAR);
+
     marketRewards.lastTotalSupplyRewards =
       marketRewards.lastTotalSupplyRewards.plus(supplyAccrued);
 
     marketRewards.supplyRewardsIndex = marketRewards.supplyRewardsIndex.plus(
-      supplyAccrued.times(RAY).div(market.totalSupplyShares)
+      supplyAccrued.times(PRECISION).div(market.totalSupplyShares)
     );
   }
 
@@ -79,7 +80,7 @@ export function updateTotalDistributed(
       marketRewards.lastTotalBorrowRewards.plus(borrowAccrued);
 
     marketRewards.borrowRewardsIndex = marketRewards.borrowRewardsIndex.plus(
-      borrowAccrued.times(RAY).div(market.totalBorrowShares)
+      borrowAccrued.times(PRECISION).div(market.totalBorrowShares)
     );
   }
 
@@ -92,7 +93,7 @@ export function updateTotalDistributed(
 
     marketRewards.collateralRewardsIndex =
       marketRewards.collateralRewardsIndex.plus(
-        collateralAccrued.times(RAY).div(market.totalCollateral)
+        collateralAccrued.times(PRECISION).div(market.totalCollateral)
       );
   }
 
@@ -118,7 +119,7 @@ export function accruePositionRewardForOneRate(
   const totalSupplyRewards = marketRewardsRates.supplyRewardsIndex
     .minus(positionRewards.lastPositionSupplyIndex)
     .times(position.supplyShares)
-    .div(RAY);
+    .div(PRECISION);
 
   positionRewards.positionSupplyAccrued =
     positionRewards.positionSupplyAccrued.plus(totalSupplyRewards);
@@ -129,7 +130,7 @@ export function accruePositionRewardForOneRate(
   const totalBorrowRewards = marketRewardsRates.borrowRewardsIndex
     .minus(positionRewards.lastPositionBorrowIndex)
     .times(position.borrowShares)
-    .div(RAY);
+    .div(PRECISION);
 
   positionRewards.positionBorrowAccrued =
     positionRewards.positionBorrowAccrued.plus(totalBorrowRewards);
@@ -140,7 +141,7 @@ export function accruePositionRewardForOneRate(
   const totalCollateralRewards = marketRewardsRates.collateralRewardsIndex
     .minus(positionRewards.lastPositionCollateralIndex)
     .times(position.collateral)
-    .div(RAY);
+    .div(PRECISION);
 
   positionRewards.positionCollateralAccrued =
     positionRewards.positionCollateralAccrued.plus(totalCollateralRewards);
