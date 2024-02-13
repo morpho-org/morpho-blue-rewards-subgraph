@@ -94,7 +94,7 @@ export function handleTransfer(event: TransferEvent): void {
 
   distributeMetaMorphoRewards(mmTxFrom);
 
-  const idTo = generateLogId(event).concat(Bytes.fromI32(1 as i32));
+  const idTo = generateLogId(event).concat(Bytes.fromI32(2 as i32));
 
   const mmTxTo = new MetaMorphoTx(idTo);
   mmTxTo.metaMorpho = setupMetaMorpho(event.address).id;
