@@ -60,40 +60,49 @@ export function updateTotalDistributed(
   const market = getMarket(marketRewards.market);
 
   if (market.totalSupplyShares.gt(BigInt.zero())) {
-    const supplyAccrued = marketRewards.supplyRatePerYear
+    const scaledSupplyAccrued = marketRewards.supplyRatePerYear
       .times(timeDelta)
+      .times(PRECISION)
       .div(ONE_YEAR);
 
     marketRewards.lastTotalSupplyRewards =
-      marketRewards.lastTotalSupplyRewards.plus(supplyAccrued);
+      marketRewards.lastTotalSupplyRewards.plus(
+        scaledSupplyAccrued.div(PRECISION)
+      );
 
     marketRewards.supplyRewardsIndex = marketRewards.supplyRewardsIndex.plus(
-      supplyAccrued.times(PRECISION).div(market.totalSupplyShares)
+      scaledSupplyAccrued.div(market.totalSupplyShares)
     );
   }
 
   if (market.totalBorrowShares.gt(BigInt.zero())) {
-    const borrowAccrued = marketRewards.borrowRatePerYear
+    const scaledBorrowAccrued = marketRewards.borrowRatePerYear
       .times(timeDelta)
+      .times(PRECISION)
       .div(ONE_YEAR);
     marketRewards.lastTotalBorrowRewards =
-      marketRewards.lastTotalBorrowRewards.plus(borrowAccrued);
+      marketRewards.lastTotalBorrowRewards.plus(
+        scaledBorrowAccrued.div(PRECISION)
+      );
 
     marketRewards.borrowRewardsIndex = marketRewards.borrowRewardsIndex.plus(
-      borrowAccrued.times(PRECISION).div(market.totalBorrowShares)
+      scaledBorrowAccrued.div(market.totalBorrowShares)
     );
   }
 
   if (market.totalCollateral.gt(BigInt.zero())) {
-    const collateralAccrued = marketRewards.collateralRatePerYear
+    const scaledCollateralAccrued = marketRewards.collateralRatePerYear
       .times(timeDelta)
+      .times(PRECISION)
       .div(ONE_YEAR);
     marketRewards.lastTotalCollateralRewards =
-      marketRewards.lastTotalCollateralRewards.plus(collateralAccrued);
+      marketRewards.lastTotalCollateralRewards.plus(
+        scaledCollateralAccrued.div(PRECISION)
+      );
 
     marketRewards.collateralRewardsIndex =
       marketRewards.collateralRewardsIndex.plus(
-        collateralAccrued.times(PRECISION).div(market.totalCollateral)
+        scaledCollateralAccrued.div(market.totalCollateral)
       );
   }
 
