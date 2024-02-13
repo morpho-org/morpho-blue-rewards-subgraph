@@ -31,9 +31,6 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
 
   if (!marketRewardsRates) {
     marketRewardsRates = new MarketRewardsRate(id);
-    marketRewardsRates.lastTotalSupplyRewards = BigInt.zero();
-    marketRewardsRates.lastTotalBorrowRewards = BigInt.zero();
-    marketRewardsRates.lastTotalCollateralRewards = BigInt.zero();
 
     marketRewardsRates.supplyRewardsIndex = BigInt.zero();
     marketRewardsRates.borrowRewardsIndex = BigInt.zero();

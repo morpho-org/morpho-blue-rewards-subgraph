@@ -65,11 +65,6 @@ export function updateTotalDistributed(
       .times(PRECISION)
       .div(ONE_YEAR);
 
-    marketRewards.lastTotalSupplyRewards =
-      marketRewards.lastTotalSupplyRewards.plus(
-        scaledSupplyAccrued.div(PRECISION)
-      );
-
     marketRewards.supplyRewardsIndex = marketRewards.supplyRewardsIndex.plus(
       scaledSupplyAccrued.div(market.totalSupplyShares)
     );
@@ -80,10 +75,6 @@ export function updateTotalDistributed(
       .times(timeDelta)
       .times(PRECISION)
       .div(ONE_YEAR);
-    marketRewards.lastTotalBorrowRewards =
-      marketRewards.lastTotalBorrowRewards.plus(
-        scaledBorrowAccrued.div(PRECISION)
-      );
 
     marketRewards.borrowRewardsIndex = marketRewards.borrowRewardsIndex.plus(
       scaledBorrowAccrued.div(market.totalBorrowShares)
@@ -95,10 +86,6 @@ export function updateTotalDistributed(
       .times(timeDelta)
       .times(PRECISION)
       .div(ONE_YEAR);
-    marketRewards.lastTotalCollateralRewards =
-      marketRewards.lastTotalCollateralRewards.plus(
-        scaledCollateralAccrued.div(PRECISION)
-      );
 
     marketRewards.collateralRewardsIndex =
       marketRewards.collateralRewardsIndex.plus(
