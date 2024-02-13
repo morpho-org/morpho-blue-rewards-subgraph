@@ -18,7 +18,7 @@ Indexed data within the subgraph may experience updates delays, pending the late
 We are developing an SDK to facilitate real-time data updates, aiming to ensure immediate access to the latest rewards information. This SDK will be complemented by an API, simplifying access to reward data for all users. More details on these enhancements will be provided soon.
 
 ## Precision
-To redistribute rewards accurately, we compute a rewards index for each market, scaling it by \(10^{36}\) for enhanced precision. The formula for determining the rewards index precision is:
+To redistribute rewards accurately, we compute a rewards index for each market, scaling it by `1e36` for enhanced precision. The formula for determining the rewards index precision is:
 
 `Precision = reward_token_decimals + 36 - (market_token_decimals + 6)`
 
