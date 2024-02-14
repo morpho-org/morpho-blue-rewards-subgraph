@@ -134,14 +134,9 @@ type MarketRewardsRate @entity {
 
   availableAt: BigInt!
 
-  "the current rewards on the supply side, similar to totalAssets in a share token"
-  lastTotalSupplyRewards: BigInt!
-  lastTotalBorrowRewards: BigInt!
-  lastTotalCollateralRewards: BigInt!
-
-    supplyRewardsIndex: BigInt!
-    borrowRewardsIndex: BigInt!
-    collateralRewardsIndex: BigInt!
+  supplyRewardsIndex: BigInt!
+  borrowRewardsIndex: BigInt!
+  collateralRewardsIndex: BigInt!
 
   lastUpdateTimestamp: BigInt!
 

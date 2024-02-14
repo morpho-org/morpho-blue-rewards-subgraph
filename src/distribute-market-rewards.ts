@@ -7,7 +7,7 @@ import {
   PositionReward,
 } from "../generated/schema";
 
-import { ONE_YEAR, RAY } from "./constants";
+import { ONE_YEAR, PRECISION } from "./constants";
 import {
   getMarket,
   setupUserRewardProgramAccrual,
@@ -60,39 +60,36 @@ export function updateTotalDistributed(
   const market = getMarket(marketRewards.market);
 
   if (market.totalSupplyShares.gt(BigInt.zero())) {
-    const supplyAccrued = marketRewards.supplyRatePerYear
+    const scaledSupplyAccrued = marketRewards.supplyRatePerYear
       .times(timeDelta)
+      .times(PRECISION)
       .div(ONE_YEAR);
-    marketRewards.lastTotalSupplyRewards =
-      marketRewards.lastTotalSupplyRewards.plus(supplyAccrued);
 
     marketRewards.supplyRewardsIndex = marketRewards.supplyRewardsIndex.plus(
-      supplyAccrued.times(RAY).div(market.totalSupplyShares)
+      scaledSupplyAccrued.div(market.totalSupplyShares)
     );
   }
 
   if (market.totalBorrowShares.gt(BigInt.zero())) {
-    const borrowAccrued = marketRewards.borrowRatePerYear
+    const scaledBorrowAccrued = marketRewards.borrowRatePerYear
       .times(timeDelta)
+      .times(PRECISION)
       .div(ONE_YEAR);
-    marketRewards.lastTotalBorrowRewards =
-      marketRewards.lastTotalBorrowRewards.plus(borrowAccrued);
 
     marketRewards.borrowRewardsIndex = marketRewards.borrowRewardsIndex.plus(
-      borrowAccrued.times(RAY).div(market.totalBorrowShares)
+      scaledBorrowAccrued.div(market.totalBorrowShares)
     );
   }
 
   if (market.totalCollateral.gt(BigInt.zero())) {
-    const collateralAccrued = marketRewards.collateralRatePerYear
+    const scaledCollateralAccrued = marketRewards.collateralRatePerYear
       .times(timeDelta)
+      .times(PRECISION)
       .div(ONE_YEAR);
-    marketRewards.lastTotalCollateralRewards =
-      marketRewards.lastTotalCollateralRewards.plus(collateralAccrued);
 
     marketRewards.collateralRewardsIndex =
       marketRewards.collateralRewardsIndex.plus(
-        collateralAccrued.times(RAY).div(market.totalCollateral)
+        scaledCollateralAccrued.div(market.totalCollateral)
       );
   }
 
@@ -118,7 +115,7 @@ export function accruePositionRewardForOneRate(
   const totalSupplyRewards = marketRewardsRates.supplyRewardsIndex
     .minus(positionRewards.lastPositionSupplyIndex)
     .times(position.supplyShares)
-    .div(RAY);
+    .div(PRECISION);
 
   positionRewards.positionSupplyAccrued =
     positionRewards.positionSupplyAccrued.plus(totalSupplyRewards);
@@ -129,7 +126,7 @@ export function accruePositionRewardForOneRate(
   const totalBorrowRewards = marketRewardsRates.borrowRewardsIndex
     .minus(positionRewards.lastPositionBorrowIndex)
     .times(position.borrowShares)
-    .div(RAY);
+    .div(PRECISION);
 
   positionRewards.positionBorrowAccrued =
     positionRewards.positionBorrowAccrued.plus(totalBorrowRewards);
@@ -140,7 +137,7 @@ export function accruePositionRewardForOneRate(
   const totalCollateralRewards = marketRewardsRates.collateralRewardsIndex
     .minus(positionRewards.lastPositionCollateralIndex)
     .times(position.collateral)
-    .div(RAY);
+    .div(PRECISION);
 
   positionRewards.positionCollateralAccrued =
     positionRewards.positionCollateralAccrued.plus(totalCollateralRewards);

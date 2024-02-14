@@ -8,7 +8,7 @@ import {
   UserRewardProgramAccrual,
 } from "../generated/schema";
 
-import { RAY } from "./constants";
+import { PRECISION } from "./constants";
 import { distributeMarketRewards } from "./distribute-market-rewards";
 import {
   setupMetaMorphoPositionReward,
@@ -31,7 +31,7 @@ function accrueMetaMorphoRewardsForOneProgram(
   const rewardsAccrued = mmBlueRewardsAccrual.supplyRewardsAccrued;
   if (mm.totalShares.gt(BigInt.zero())) {
     mmRewardsAccrual.lastSupplyIndex = mmRewardsAccrual.lastSupplyIndex.plus(
-      rewardsAccrued.times(RAY).div(mm.totalShares)
+      rewardsAccrued.times(PRECISION).div(mm.totalShares)
     );
   }
 
@@ -67,7 +67,7 @@ function accrueMetaMorphoPositionRewardForOneProgram(
   const userAccrued = mmRewardsAccrual.lastSupplyIndex
     .minus(mmPositionReward.lastIndex)
     .times(mmPosition.shares)
-    .div(RAY);
+    .div(PRECISION);
 
   mmPositionReward.rewardsAccrued =
     mmPositionReward.rewardsAccrued.plus(userAccrued);
