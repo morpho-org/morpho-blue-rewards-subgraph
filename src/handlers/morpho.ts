@@ -14,7 +14,7 @@ import {
 import { MorphoFeeRecipient, MorphoTx } from "../../generated/schema";
 import { handleMorphoTx } from "../distribute-market-rewards";
 import { setupMarket, setupUser } from "../initializers";
-import { generateLogId, hashBytes, PositionType } from "../utils";
+import { generateLogId, PositionType } from "../utils";
 
 export function handleAccrueInterest(event: AccrueInterestEvent): void {
   if (event.params.feeShares.isZero()) return;
@@ -66,11 +66,10 @@ export function handleBorrow(event: BorrowEvent): void {
 }
 
 export function handleLiquidate(event: LiquidateEvent): void {
-  const repayId = hashBytes(
-    event.transaction.hash
-      .concat(Bytes.fromHexString(event.logIndex.toHexString()))
-      .concat(Bytes.fromUTF8(PositionType.BORROW))
+  const repayId = generateLogId(event).concat(
+    Bytes.fromUTF8(PositionType.BORROW)
   );
+
   const repayMorphoTx = new MorphoTx(repayId);
   repayMorphoTx.type = PositionType.BORROW;
   repayMorphoTx.user = setupUser(event.params.borrower).id;
@@ -90,11 +89,10 @@ export function handleLiquidate(event: LiquidateEvent): void {
   repayMorphoTx.save();
   handleMorphoTx(repayMorphoTx);
 
-  const withdrawCollatId = hashBytes(
-    event.transaction.hash
-      .concat(Bytes.fromHexString(event.logIndex.toHexString()))
-      .concat(Bytes.fromUTF8(PositionType.COLLATERAL))
+  const withdrawCollatId = generateLogId(event).concat(
+    Bytes.fromUTF8(PositionType.COLLATERAL)
   );
+
   const withdrawCollatTx = new MorphoTx(withdrawCollatId);
   withdrawCollatTx.type = PositionType.COLLATERAL;
   withdrawCollatTx.user = setupUser(event.params.borrower).id;
