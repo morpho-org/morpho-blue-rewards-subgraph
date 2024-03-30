@@ -1,16 +1,23 @@
-import { BigInt } from "@graphprotocol/graph-ts";
+import { BigInt, log } from "@graphprotocol/graph-ts";
 
 import { RewardsEmissionSet as RewardsEmissionSetEvent } from "../../generated/EmissionDataProvider/EmissionDataProvider";
 import {
+  Market,
   MarketRewardsRate,
   RateUpdateTx,
   RewardProgram,
 } from "../../generated/schema";
 import { updateTotalDistributed } from "../distribute-market-rewards";
-import { setupMarket, setupURD, setupUser } from "../initializers";
+import { setupURD, setupUser } from "../initializers";
 import { generateLogId, hashBytes } from "../utils";
 
 export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
+  if (Market.load(event.params.market) === null) {
+    log.warning("Market {} not found, skipping rate definition", [
+      event.params.market.toHexString(),
+    ]);
+    return;
+  }
   const rewardProgramId = hashBytes(
     event.params.sender
       .concat(event.params.rewardToken)
@@ -37,7 +44,7 @@ export function handleRewardsEmissionSet(event: RewardsEmissionSetEvent): void {
     marketRewardsRates.collateralRewardsIndex = BigInt.zero();
 
     marketRewardsRates.rewardProgram = rewardProgram.id;
-    marketRewardsRates.market = setupMarket(event.params.market).id;
+    marketRewardsRates.market = event.params.market; // Thanks to the check above, we know this market exists.
     marketRewardsRates.lastUpdateTimestamp = event.block.timestamp;
   } else {
     // Update the distribution up to the new timestamp.

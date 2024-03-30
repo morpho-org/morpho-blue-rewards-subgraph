@@ -34,20 +34,6 @@ export function setupUser(address: Bytes): User {
   return user;
 }
 
-export function setupMarket(marketId: Bytes): Market {
-  let market = Market.load(marketId);
-  if (!market) {
-    market = new Market(marketId);
-    market.totalSupplyShares = BigInt.zero();
-    market.totalBorrowShares = BigInt.zero();
-    market.totalCollateral = BigInt.zero();
-
-    market.save();
-  }
-
-  return market;
-}
-
 export function setupPosition(marketId: Bytes, userAddress: Bytes): Position {
   const positionId = hashBytes(marketId.concat(userAddress));
   let position = Position.load(positionId);
