@@ -208,7 +208,7 @@ export function handleSupplyCollateral(event: SupplyCollateralEvent): void {
     !event.params.onBehalf.equals(event.params.caller)
   ) {
     // there is a supply of a MetaMorpho as collateral market.
-    // if there is a direct supply (onBehalf == caller), we are just skipping the transfer in the vault transfer function (to = blue)
+    // if there is a direct supply (onBehalf == caller), we are just skipping the transfer, even in the vault transfer function (to = blue)
     // if there is a supply on behalf of someone else, we handle it as a transfer from the caller to the onBehalf user
 
     transferMetaMorphoShares(
@@ -266,8 +266,8 @@ export function handleWithdrawCollateral(event: WithdrawCollateralEvent): void {
     MetaMorpho.load(market.collateralToken) !== null &&
     !event.params.onBehalf.equals(event.params.receiver)
   ) {
-    // there is a supply of a MetaMorpho as collateral market.
-    // if there is a direct withdrawal (onBehalf == receiver), we are just skipping the transfer in the vault transfer function (to = blue)
+    // there is a withdrawal from a MetaMorpho as collateral market.
+    // if there is a direct withdrawal (onBehalf == receiver), we are just skipping the transfer, even in the vault transfer function (to = blue)
     // if there is a withdrawal on behalf of someone else, we handle it as a transfer from the morpho user (onBehalf) to the receiver
 
     transferMetaMorphoShares(
