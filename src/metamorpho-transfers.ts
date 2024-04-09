@@ -30,20 +30,26 @@ export function transferMetaMorphoShares(
 ): void {
   if (from.equals(to)) return;
 
+  const timestamp = event.block.timestamp;
+  const txHash = event.transaction.hash;
+  const txIndex = event.transaction.index;
+  const logIndex = event.logIndex;
+  const blockNumber = event.block.number;
+
   const idFrom = generateLogId(event).concat(Bytes.fromI32(1 as i32));
 
   const mmTxFrom = new MetaMorphoTx(idFrom);
-  mmTxFrom.metaMorpho = setupMetaMorpho(event.address).id;
+  mmTxFrom.metaMorpho = setupMetaMorpho(metaMorpho).id;
 
   mmTxFrom.user = setupUser(from).id;
-  mmTxFrom.position = setupMetaMorphoPosition(to, metaMorpho).id;
+  mmTxFrom.position = setupMetaMorphoPosition(from, metaMorpho).id;
   mmTxFrom.shares = amount.neg();
 
-  mmTxFrom.timestamp = event.block.timestamp;
-  mmTxFrom.txHash = event.transaction.hash;
-  mmTxFrom.txIndex = event.transaction.index;
-  mmTxFrom.logIndex = event.logIndex;
-  mmTxFrom.blockNumber = event.block.number;
+  mmTxFrom.timestamp = timestamp;
+  mmTxFrom.txHash = txHash;
+  mmTxFrom.txIndex = txIndex;
+  mmTxFrom.logIndex = logIndex;
+  mmTxFrom.blockNumber = blockNumber;
   mmTxFrom.save();
 
   distributeMetaMorphoRewards(mmTxFrom);
@@ -51,17 +57,17 @@ export function transferMetaMorphoShares(
   const idTo = generateLogId(event).concat(Bytes.fromI32(2 as i32));
 
   const mmTxTo = new MetaMorphoTx(idTo);
-  mmTxTo.metaMorpho = setupMetaMorpho(event.address).id;
+  mmTxTo.metaMorpho = setupMetaMorpho(metaMorpho).id;
 
   mmTxTo.user = setupUser(to).id;
-  mmTxTo.position = setupMetaMorphoPosition(to, event.address).id;
+  mmTxTo.position = setupMetaMorphoPosition(to, metaMorpho).id;
   mmTxTo.shares = amount;
-  mmTxTo.timestamp = event.block.timestamp;
 
-  mmTxTo.txHash = event.transaction.hash;
-  mmTxTo.txIndex = event.transaction.index;
-  mmTxTo.logIndex = event.logIndex;
-  mmTxTo.blockNumber = event.block.number;
+  mmTxTo.timestamp = timestamp;
+  mmTxTo.txHash = txHash;
+  mmTxTo.txIndex = txIndex;
+  mmTxTo.logIndex = logIndex;
+  mmTxTo.blockNumber = blockNumber;
   mmTxTo.save();
 
   distributeMetaMorphoRewards(mmTxTo);
