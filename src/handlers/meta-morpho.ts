@@ -1,4 +1,4 @@
-import { Address, Bytes, log } from "@graphprotocol/graph-ts";
+import { Address, log } from "@graphprotocol/graph-ts";
 
 import { MetaMorphoTx } from "../../generated/schema";
 import {
@@ -8,12 +8,14 @@ import {
   Withdraw as WithdrawEvent,
   SetFeeRecipient as SetFeeRecipientEvent,
 } from "../../generated/templates/MetaMorpho/MetaMorpho";
+import { MORPHO_ADDRESS } from "../constants";
 import { distributeMetaMorphoRewards } from "../distribute-metamorpho-rewards";
 import {
   setupMetaMorpho,
   setupMetaMorphoPosition,
   setupUser,
 } from "../initializers";
+import { transferMetaMorphoShares } from "../metamorpho-transfers";
 import { generateLogId } from "../utils";
 
 export function handleAccrueInterest(event: AccrueInterestEvent): void {
@@ -73,44 +75,22 @@ export function handleTransfer(event: TransferEvent): void {
     event.params.to.equals(Address.zero())
   )
     return;
-  const idFrom = generateLogId(event).concat(Bytes.fromI32(1 as i32));
 
-  const mmTxFrom = new MetaMorphoTx(idFrom);
-  mmTxFrom.metaMorpho = setupMetaMorpho(event.address).id;
+  // Skip transfer to Morpho. They are handled into Morpho handlers.
+  // NB: if there is a flash loan of vault shares, they are transferred back to Morpho into the same transaction, so there is no need to handle them at all.
+  if (
+    event.params.from.equals(MORPHO_ADDRESS) ||
+    event.params.to.equals(MORPHO_ADDRESS)
+  )
+    return;
 
-  mmTxFrom.user = setupUser(event.params.from).id;
-  mmTxFrom.position = setupMetaMorphoPosition(
+  transferMetaMorphoShares(
+    event,
+    event.address,
     event.params.from,
-    event.address
-  ).id;
-  mmTxFrom.shares = event.params.value.neg();
-
-  mmTxFrom.timestamp = event.block.timestamp;
-  mmTxFrom.txHash = event.transaction.hash;
-  mmTxFrom.txIndex = event.transaction.index;
-  mmTxFrom.logIndex = event.logIndex;
-  mmTxFrom.blockNumber = event.block.number;
-  mmTxFrom.save();
-
-  distributeMetaMorphoRewards(mmTxFrom);
-
-  const idTo = generateLogId(event).concat(Bytes.fromI32(2 as i32));
-
-  const mmTxTo = new MetaMorphoTx(idTo);
-  mmTxTo.metaMorpho = setupMetaMorpho(event.address).id;
-
-  mmTxTo.user = setupUser(event.params.to).id;
-  mmTxTo.position = setupMetaMorphoPosition(event.params.to, event.address).id;
-  mmTxTo.shares = event.params.value;
-  mmTxTo.timestamp = event.block.timestamp;
-
-  mmTxTo.txHash = event.transaction.hash;
-  mmTxTo.txIndex = event.transaction.index;
-  mmTxTo.logIndex = event.logIndex;
-  mmTxTo.blockNumber = event.block.number;
-  mmTxTo.save();
-
-  distributeMetaMorphoRewards(mmTxTo);
+    event.params.to,
+    event.params.value
+  );
 }
 
 export function handleWithdraw(event: WithdrawEvent): void {

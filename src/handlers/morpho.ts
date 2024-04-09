@@ -1,4 +1,4 @@
-import { Bytes, log } from "@graphprotocol/graph-ts";
+import { BigInt, Bytes, log } from "@graphprotocol/graph-ts";
 
 import {
   AccrueInterest as AccrueInterestEvent,
@@ -10,10 +10,17 @@ import {
   Withdraw as WithdrawEvent,
   WithdrawCollateral as WithdrawCollateralEvent,
   SetFeeRecipient as SetFeeRecipientEvent,
+  CreateMarket as CreateMarketEvent,
 } from "../../generated/Morpho/Morpho";
-import { MorphoFeeRecipient, MorphoTx } from "../../generated/schema";
+import {
+  Market,
+  MetaMorpho,
+  MorphoFeeRecipient,
+  MorphoTx,
+} from "../../generated/schema";
 import { handleMorphoTx } from "../distribute-market-rewards";
-import { setupMarket, setupUser } from "../initializers";
+import { getMarket, setupUser } from "../initializers";
+import { transferMetaMorphoShares } from "../metamorpho-transfers";
 import { generateLogId, PositionType } from "../utils";
 
 export function handleAccrueInterest(event: AccrueInterestEvent): void {
@@ -30,7 +37,7 @@ export function handleAccrueInterest(event: AccrueInterestEvent): void {
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.SUPPLY;
   morphoTx.user = feeRecipient.feeRecipient;
-  morphoTx.market = setupMarket(event.params.id).id;
+  morphoTx.market = getMarket(event.params.id).id;
   morphoTx.shares = event.params.feeShares;
 
   morphoTx.timestamp = event.block.timestamp;
@@ -50,7 +57,7 @@ export function handleBorrow(event: BorrowEvent): void {
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.BORROW;
   morphoTx.user = setupUser(event.params.onBehalf).id;
-  morphoTx.market = setupMarket(event.params.id).id;
+  morphoTx.market = getMarket(event.params.id).id;
   morphoTx.shares = event.params.shares;
 
   morphoTx.timestamp = event.block.timestamp;
@@ -65,7 +72,21 @@ export function handleBorrow(event: BorrowEvent): void {
   handleMorphoTx(morphoTx);
 }
 
+export function handleCreateMarket(event: CreateMarketEvent): void {
+  if (Market.load(event.params.id) !== null) {
+    log.critical("Market {} already exists", [event.params.id.toHexString()]);
+  }
+  const market = new Market(event.params.id);
+  market.totalSupplyShares = BigInt.zero();
+  market.totalBorrowShares = BigInt.zero();
+  market.totalCollateral = BigInt.zero();
+  market.loanToken = event.params.marketParams.loanToken;
+  market.collateralToken = event.params.marketParams.collateralToken;
+  market.save();
+}
+
 export function handleLiquidate(event: LiquidateEvent): void {
+  const market = getMarket(event.params.id);
   const repayId = generateLogId(event).concat(
     Bytes.fromUTF8(PositionType.BORROW)
   );
@@ -73,7 +94,7 @@ export function handleLiquidate(event: LiquidateEvent): void {
   const repayMorphoTx = new MorphoTx(repayId);
   repayMorphoTx.type = PositionType.BORROW;
   repayMorphoTx.user = setupUser(event.params.borrower).id;
-  repayMorphoTx.market = setupMarket(event.params.id).id;
+  repayMorphoTx.market = market.id;
   const totalShares = event.params.repaidShares.plus(
     event.params.badDebtShares
   );
@@ -96,7 +117,7 @@ export function handleLiquidate(event: LiquidateEvent): void {
   const withdrawCollatTx = new MorphoTx(withdrawCollatId);
   withdrawCollatTx.type = PositionType.COLLATERAL;
   withdrawCollatTx.user = setupUser(event.params.borrower).id;
-  withdrawCollatTx.market = setupMarket(event.params.id).id;
+  withdrawCollatTx.market = market.id;
   withdrawCollatTx.shares = event.params.seizedAssets.neg();
 
   withdrawCollatTx.timestamp = event.block.timestamp;
@@ -109,6 +130,17 @@ export function handleLiquidate(event: LiquidateEvent): void {
   withdrawCollatTx.save();
 
   handleMorphoTx(withdrawCollatTx);
+
+  if (MetaMorpho.load(market.collateralToken) !== null) {
+    // there is a liquidation of a MetaMorpho as collateral market. We handle it as a transfer from the borrower to the liquidator
+    transferMetaMorphoShares(
+      event,
+      market.collateralToken,
+      event.params.borrower,
+      event.params.caller,
+      event.params.seizedAssets
+    );
+  }
 }
 
 export function handleRepay(event: RepayEvent): void {
@@ -116,7 +148,7 @@ export function handleRepay(event: RepayEvent): void {
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.BORROW;
   morphoTx.user = setupUser(event.params.onBehalf).id;
-  morphoTx.market = setupMarket(event.params.id).id;
+  morphoTx.market = getMarket(event.params.id).id;
   morphoTx.shares = event.params.shares.neg();
 
   morphoTx.timestamp = event.block.timestamp;
@@ -137,7 +169,7 @@ export function handleSupply(event: SupplyEvent): void {
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.SUPPLY;
   morphoTx.user = setupUser(event.params.onBehalf).id;
-  morphoTx.market = setupMarket(event.params.id).id;
+  morphoTx.market = getMarket(event.params.id).id;
   morphoTx.shares = event.params.shares;
 
   morphoTx.timestamp = event.block.timestamp;
@@ -153,11 +185,12 @@ export function handleSupply(event: SupplyEvent): void {
 }
 
 export function handleSupplyCollateral(event: SupplyCollateralEvent): void {
+  const market = getMarket(event.params.id);
   const id = generateLogId(event);
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.COLLATERAL;
   morphoTx.user = setupUser(event.params.onBehalf).id;
-  morphoTx.market = setupMarket(event.params.id).id;
+  morphoTx.market = market.id;
   morphoTx.shares = event.params.assets;
 
   morphoTx.timestamp = event.block.timestamp;
@@ -170,6 +203,22 @@ export function handleSupplyCollateral(event: SupplyCollateralEvent): void {
   morphoTx.save();
 
   handleMorphoTx(morphoTx);
+  if (
+    MetaMorpho.load(market.collateralToken) !== null &&
+    !event.params.onBehalf.equals(event.params.caller)
+  ) {
+    // there is a supply of a MetaMorpho as collateral market.
+    // if there is a direct supply (onBehalf == caller), we are just skipping the transfer, even in the vault transfer function (to = blue)
+    // if there is a supply on behalf of someone else, we handle it as a transfer from the caller to the onBehalf user
+
+    transferMetaMorphoShares(
+      event,
+      market.collateralToken,
+      event.params.caller,
+      event.params.onBehalf,
+      event.params.assets
+    );
+  }
 }
 
 export function handleWithdraw(event: WithdrawEvent): void {
@@ -177,7 +226,7 @@ export function handleWithdraw(event: WithdrawEvent): void {
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.SUPPLY;
   morphoTx.user = setupUser(event.params.onBehalf).id;
-  morphoTx.market = setupMarket(event.params.id).id;
+  morphoTx.market = getMarket(event.params.id).id;
   morphoTx.shares = event.params.shares.neg();
 
   morphoTx.timestamp = event.block.timestamp;
@@ -193,11 +242,13 @@ export function handleWithdraw(event: WithdrawEvent): void {
 }
 
 export function handleWithdrawCollateral(event: WithdrawCollateralEvent): void {
+  const market = getMarket(event.params.id);
+
   const id = generateLogId(event);
   const morphoTx = new MorphoTx(id);
   morphoTx.type = PositionType.COLLATERAL;
   morphoTx.user = setupUser(event.params.onBehalf).id;
-  morphoTx.market = setupMarket(event.params.id).id;
+  morphoTx.market = market.id;
   morphoTx.shares = event.params.assets.neg();
 
   morphoTx.timestamp = event.block.timestamp;
@@ -210,6 +261,23 @@ export function handleWithdrawCollateral(event: WithdrawCollateralEvent): void {
   morphoTx.save();
 
   handleMorphoTx(morphoTx);
+
+  if (
+    MetaMorpho.load(market.collateralToken) !== null &&
+    !event.params.onBehalf.equals(event.params.receiver)
+  ) {
+    // there is a withdrawal from a MetaMorpho as collateral market.
+    // if there is a direct withdrawal (onBehalf == receiver), we are just skipping the transfer, even in the vault transfer function (to = blue)
+    // if there is a withdrawal on behalf of someone else, we handle it as a transfer from the morpho user (onBehalf) to the receiver
+
+    transferMetaMorphoShares(
+      event,
+      market.collateralToken,
+      event.params.onBehalf,
+      event.params.receiver,
+      event.params.assets
+    );
+  }
 }
 
 export function handleSetFeeRecipient(event: SetFeeRecipientEvent): void {
